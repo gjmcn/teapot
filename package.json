@@ -1,5 +1,5 @@
 {
-  "name": "teapot",
+  "name": "@gjmcn/teapot",
   "version": "0.1.0",
   "description": "A JavaScript library for creating SVG plots.",
   "module": "src/index.js",
