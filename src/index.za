@@ -1,0 +1,1863 @@
+//////////////////////////////////////////////////////////////
+// Everything in one big file for now to keep the bundle size
+// down. Split up the code when Zap has more compiler options.
+//////////////////////////////////////////////////////////////
+
+
+importAll 'd3-shape' d3
+// importAll 'https://cdn.skypack.dev/d3-shape' d3  // dev
+import './defaults.js' defOptions defChannels defShapeScheme
+export tp
+
+
+// ========== helpers ==========
+
+// clip and gradient counts
+clipCount = 0
+gradientCount = 0
+
+// all mark names
+markNames = @@ 'hBar' 'vBar' 'point' 'rect' 'segment' 'hLink' 'vLink' 'arc'
+| 'edge' 'text' 'line' 'hBand' 'vBand'
+
+// single marks
+singleMarkNames = @@ 'line' 'hBand' 'vBand'
+
+// channel names
+channelNames = new Set (defChannels ~keys)
+
+// kind of channel
+getKind = fun ch
+    defChannels ~get ch : '_kind'
+
+// x and y channels
+xyChannelNames = @@ 'x' 'xx' 'y' 'yy'
+
+// fill and stroke channels used in legend
+legendFillStrokeChannels = @@ 'fill' 'fillOpacity'
+| 'stroke' 'strokeOpacity' 'strokeWidth' 'strokeDash'
+
+// angle channels
+angleChannels = @@ 'startAngle' 'endAngle' 'padAngle'
+
+// curve types
+curveTypes = @@ 'basis' 'basisOpen' 'bundle' 'cardinal' 'cardinalOpen'
+| 'catmullRom' 'catmullRomOpen' 'linear' 'monotoneX' 'monotoneY' 'natural'
+| 'curveStep' 'curveStepAfter' 'curveStepBefore' 'basisClosed' 'cardinalClosed'
+| 'catmullRomClosed' 'linearClosed'
+
+// convenience events
+convenienceEvents = @ 'click' 'mouseenter' 'mouseleave'
+
+// mark-channel error message
+markChannelError = [+ 'mark-'a', channel-'b', 'c \Error throw]
+
+// test if value is Infinity, -Infinity or NaN
+isInfOrNaN = fun val
+    val isNaN || (val == Infinity) || (val == (- Infinity))
+
+// error messages
+nonFiniteMsg = 'non-finite data value (NaN, Infinity or -Infinity)'
+allMissingMsg = 'every datum has a missing value'
+
+// captitalize first character of string
+capitalize = fun s
+    s,0 toUpperCase + (s ~slice 1)
+
+// camel case to kebab case
+camelToKebab = fun s
+    s ~replace &/[A-Z]/g [+ '-'(a toLowerCase)]
+
+// min/max of array where ignore undefined and null elements
+minVal = fun arr
+    mn = Infinity
+    arr each v
+        if ((v != null) && (v != undefined) && (v < mn))
+            mn \= v
+    mn
+maxVal = fun arr
+    mx = - Infinity
+    arr each v
+        if ((v != null) && (v != undefined) && (v > mx))
+            mx \= v
+    mx
+
+// check shape scheme, returns the scheme
+checkShapeScheme = fun scheme mk
+    if (scheme != defShapeScheme &&
+    | (scheme some [defShapeScheme ~includes a !]))
+        + 'mark-'mk,type', invalid shape name' \Error throw
+    scheme
+
+// check is an array of objects/arrays
+checkArrayOfObjects = fun d
+    if (d isArray ! || (d some [typeof a != 'object' || (a == null)])) 
+        'array of objects/arrays expected' \Error throw
+
+// check data array and get indices of missing values
+checkData = fun arr mk ch
+    if (arr,length == 0)
+        \markChannelError mk,type ch 'empty data array'
+    if (arr some isInfOrNaN)
+        \markChannelError mk,type ch nonFiniteMsg
+    if ((mk,missing == 'skip') || (mk,missing == 'gap'))
+        missingInds = @@
+        arr,length do i
+            if (arr;i isNullish)
+                missingInds ~add i
+        if (missingInds,size == arr,length)
+            \markChannelError mk,type ch allMissingMsg
+    | else
+        if (arr some [a isNullish])
+            \markChannelError mk,type ch 'missing data value'
+    # data arr attach missingInds 
+
+// get channel default
+getChannelDefault = fun mk ch
+    obj = defChannels ~get ch
+    obj ~hasOwnProperty mk,type ? (obj : mk,type) obj,def
+
+// get option that can be a 4-array or a number - assume default is a number
+fourOption = fun _options opName 
+    _options;opName as passed
+        def = defOptions;opName
+        if (passed isArray)
+            4 empties each e i arr
+                arr;i = passed;i ?? def
+        | else
+            4 empties ~fill (passed ?? def)
+
+// populate data map from order or seq option
+populateDataMap = fun dMap ch orderOp seqOp
+    if (orderOp isNullish !)
+        if (orderOp isArray !)
+            + ch'Order is not an array' \Error throw
+        if (orderOp some [typeof a == 'number'])
+            + ch'Order contains a number' \Error throw
+        if (orderOp some [a isNullish])
+            + ch'Order contains a null or undefined value' \Error throw
+        if (new Set orderOp : 'size' < orderOp,length)
+            + ch'Order contains a duplicate' \Error throw
+        orderOp each val
+            dMap ~set val dMap,size
+    | (seqOp isNullish !)
+        if (seqOp isInteger ! ||  (seqOp <= 0))
+            + ch'Seq must be a positive integer' \Error throw
+        j = 0
+        do
+            if (j < seqOp)
+                dMap ~set (j string) j
+                j += 1
+            | else
+                stop
+
+// update data map: adds key if unused (and not a number), returns value
+updateDataMap = fun dataMap key
+    if (typeof key == 'number')
+        key
+    | (dataMap ~has key)
+        dataMap ~get key
+    | else
+        sz = dataMap,size
+        dataMap ~set key sz
+        sz
+
+// set attribute unless value is nullish, returns the element
+setUnlessNullish = fun elm attrName val
+    if (val isNullish !)
+        elm attr attrName val
+    elm
+
+// finish mark: set common channels and call the mark's callback
+finishMark = fun elm mk channels i notFillStroke
+    if (notFillStroke !)
+        elm
+        | attr 'fill'           (channels ~fill i)
+        | attr 'fill-opacity'   (channels ~fillOpacity i)
+        | attr 'stroke'         (channels ~stroke i)
+        | attr 'stroke-opacity' (channels ~strokeOpacity i)
+        | attr 'stroke-width'   (channels ~strokeWidth i)
+        | \setUnlessNullish 'stroke-linecap'   (channels ~strokeCap  i) 
+        | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i) 
+    c = channels ~'class' i
+    if (c isNullish !)
+        elm addClass c
+    nm = channels ~name i
+    if (nm isNullish !)
+        elm attr 'data-tp-name' nm
+    d = channels ~'attach' i
+    if (d isNullish !)
+        elm,__data__ = d
+    convenienceEvents each eventType
+        if (mk;eventType isNullish !)
+            elm ~addEventListener eventType mk;eventType
+    if (mk,callback isNullish !)
+        mk ~callback elm i nm
+
+// finish note
+finishNote = fun elm channels i
+    c = channels ~'noteClass' i
+    if (c isNullish !)
+        elm addClass c
+    nm = channels ~noteName i
+    if (nm isNullish !)
+        elm attr 'data-tp-name' nm
+    d = channels ~noteAttach i
+    if (d isNullish !)
+        elm,__data__ = d
+
+// use color scheme - mutates data if it is an array
+useColorScheme = fun data scheme mk ch
+    isConst = data isArray !
+    if (typeof scheme == 'function')  // continuous scheme
+        mn mx @= mk : (+ ch'Limits') ?? (@ null null)
+        mn = mn ?? (isConst ? data (\minVal data)) number
+        mx = mx ?? (isConst ? data (\maxVal data)) number
+        if (mn isFinite && (mx isFinite) !)
+            \markChannelError mk,type ch
+                + ch' limits are not finite'
+        if (mx - mn < 1e-14)
+            \markChannelError mk,type ch
+                + ch' limits are equal or the wrong way round'
+        if isConst
+            data \= data - mn / (mx - mn) \scheme
+        | else
+            rng = mx - mn
+            do data,length i
+                data;i = data;i - mn / rng \scheme
+        info = # 'min' mn 'max' mx attach scheme
+    | else  // discrete scheme
+        if isConst
+            data \= scheme;data
+        | else
+            do data,length i
+                data;i = scheme : data;i
+        info = # attach scheme
+    # attach data info
+
+// approx equal to    
+equalTo = fun u v
+    u - v abs < 1e-14
+
+// magnitude of a number: its index in standard form
+magnitude = fun v
+    sf = v ~toExponential
+    sf ~slice (sf ~indexOf 'e' + 1) number
+
+// as magnitude, but if v is a power of 10, use an index of 1 less
+magnitude10 = fun v
+    m = \magnitude v
+    10 ^ m \equalTo v ? (m - 1) m
+
+// round to given magnitude
+roundToMagnitude = fun v mag upDown
+    magVal = 10 ^ mag
+    v = v / magVal
+    r = v round
+    v = if (v \equalTo r)
+        r
+    | (upDown == 'up')
+        ceil v
+    | (upDown == 'down')
+        floor v
+    | else
+        r
+    v * magVal \enforceRound mag
+
+// assume v rounded to mag, but now enforce that rounded to mag exactly: for
+// decimals, removes tiny delta caused by floating point issues
+enforceRound = fun v mag
+    mag < 0 ? (v ~toFixed (mag abs) number) v
+
+// magnitude of highest precision digit
+// (should only use where expect t to have few significant figures)
+accuracy = fun t
+    m = \magnitude t
+    s = 1
+    do
+        if (t ~toPrecision s number \equalTo t)
+            stop
+        | (s == 14)
+            'failed to compute accuracy' \Error throw
+        | else
+            s += 1
+    m - s + 1
+
+// get text width
+getTextWidth = fun ctx txt
+    ctx ~measureText txt : 'width'
+
+// shape info
+// (xMult, yMult, xShift and yShift used in legend spacing hack)
+shapeDetails = #
+| 'circle'         (# name 'Circle'   xMult 1.138  yMult 1.138)
+| 'square'         (# name 'Square'   xMult 1      yMult 1)
+| 'diamond'        (# name 'Square'   xMult 1.414  yMult 1.414 rotate 45)
+| 'star'           (# name 'Star'     xMult 1.777  yMult 1.777)
+| 'wye'            (# name 'Wye'      xMult 1.469  yMult 1.469)
+| 'triangle-up'    (# name 'Triangle' xMult 1.477  yMult 1.3    yShift    0.2)
+| 'triangle-down'  (# name 'Triangle' xMult 1.477  yMult 1.3    yShift (- 0.2)  rotate 180)
+| 'triangle-right' (# name 'Triangle' xMult 1.3    yMult 1.477  xShift (- 0.15) rotate  90)
+| 'triangle-left'  (# name 'Triangle' xMult 1.3    yMult 1.477  xShift    0.15  rotate 270)
+| plus             (# name 'Cross'    xMult 1.331  yMult 1.331)
+| times            (# name 'Cross'    xMult 1.254  yMult 1.254 rotate 45)
+
+// point symbol - returns a <path>
+pointSymbol = fun ops
+    shape area x y #= ops
+    name rotate #= shapeDetails;shape
+    tform = + 'translate('x' 'y')'
+    if rotate
+        tform += + ' rotate('rotate')'
+    $path
+    | attr 'd'
+        d3 ~symbol (d3 : (+ 'symbol'name)) area call
+    | attr 'transform' tform
+
+// polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
+polygonCentroid = fun p
+    i = - 1
+    n = p,length
+    x = 0
+    y = 0
+    a = null
+    b = p : (n - 1)
+    c = null
+    k = 0
+    do
+        i += 1
+        if (i < n)
+            a \= b
+            b \= p;i
+            c \= a,0 * b,1 - (b,0 * a,1)
+            k += c
+            x += a,0 + b,0 * c
+            y += a,1 + b,1 * c
+        | else
+            stop
+    k *= 3
+    @ (x / k) (y / k)
+
+// color ramp
+colorRamp = fun schemeFun width height
+    f = fun v
+        1 - v \schemeFun
+    id = +'legend-gradient-'gradientCount
+    gradientCount += 1
+    g = $g
+    g insert ($defs)
+    | insert ($linearGradient)
+    | attr 'id' id
+    | attr 'gradientTransform' 'rotate(90)'
+    | insert (0 linSpace 1 16 encodeSVG 'stop')
+    | attr 'offset' [a * 100 + '%']
+    | attr 'stop-color' f
+    g insert ($rect)
+    | attr 'width'  width
+    | attr 'height' height
+    | attr 'fill'   (+ 'url(#'id')')
+    g
+
+
+// ========== constructor ==========
+
+tp = class
+    this,_marks = @
+    this,_dataset = null
+    this,_options = #
+
+
+// ========== plot method ==========
+
+tp :: 'plot' = fun target
+
+    _marks _dataset _options #= this
+
+    if (_marks,length == 0)
+        'plot has no marks' \Error throw
+
+    // local helpers
+    op = [_options;a ?? defOptions;a]
+    setAttr  = [a attr b (\op c)]
+    setDimAttr = fun elm dim attrName opName
+        elm attr attrName (dim + (\capitalize opName) \op ?? (opName \op))
+    setFont = fun elm prefix
+        elm
+        | attr 'font-family'  (+ prefix'FontFamily' \op ?? ('fontFamily' \op))
+        | attr 'font-size'    (+ prefix'FontSize'   \op ?? ('fontSize'   \op) + 'px')
+        | attr 'font-style'   (+ prefix'FontStyle'  \op ?? ('fontStyle'  \op)) 
+        | attr 'font-weight'  (+ prefix'FontWeight' \op ?? ('fontWeight' \op))
+        | attr 'fill'         (+ prefix'Color'      \op ?? ('color'      \op))
+        | attr 'fill-opacity' (+ prefix'Opacity'    \op ?? ('opacity'    \op))
+        | attr 'stroke-width' 0
+    getCanvasContext = fun prefix
+        canvas ctx @= sketch
+        ctx,font = + '' 
+        | (+ prefix'FontStyle'  \op ?? ('fontStyle'  \op))' '
+        | (+ prefix'FontWeight' \op ?? ('fontWeight' \op))' '
+        | (+ prefix'FontSize'   \op ?? ('fontSize'   \op) + 'px')' '
+        | (+ prefix'FontFamily' \op ?? ('fontFamily' \op))
+        ctx
+
+    // get mark-channel data
+    channelData = fun mk ch
+        data = mk;ch
+        if (data isNullish)
+            # isConst true data (\getChannelDefault mk ch) 
+        | (data isArray)
+            data array \checkData mk ch
+        | ((typeof data == 'string' && (data,0 == '~')) ||
+        | (typeof data == 'function'))
+            ds = mk,data ?? _dataset
+            if (ds !)
+                \markChannelError mk,type ch
+                    'no dataset attached to mark or plot'
+            if (typeof data == 'function')
+                ds ~'map' data
+            | else 
+                ds pick (data ~slice 1)
+            | \checkData mk ch
+        | else
+            if (\isInfOrNaN data)
+                \markChannelError mk,type ch nonFiniteMsg
+            # isConst true attach data 
+    
+    // data maps - fill, stroke and shape maps are mark-specific: each key is a
+    // a mark object, each value is a data map
+    dataMaps = # x (##) y (##) fill (##) stroke (##) shape (##)
+    'xy' each dim
+        dataMaps;dim \populateDataMap dim (+ dim'Order' \op) (+ dim'Seq' \op)
+    
+    // limits
+    limitsOp = \op 'limits'
+    if (limitsOp isArray)
+        if (limitsOp,length < 4)
+            limitsOp = limitsOp array
+            limitsOp,length = 4
+        xMinOp xMaxOp yMinOp yMaxOp @= limitsOp `?? defOptions,limits
+    | else
+        xMinOp = limitsOp
+        xMaxOp = limitsOp
+        yMinOp = limitsOp
+        yMaxOp = limitsOp
+    xMin = (xMinOp == '_nice' || (xMinOp == '_data')) ?    Infinity  xMinOp
+    xMax = (xMaxOp == '_nice' || (xMaxOp == '_data')) ? (- Infinity) xMaxOp
+    yMin = (yMinOp == '_nice' || (yMinOp == '_data')) ?    Infinity  yMinOp
+    yMax = (yMaxOp == '_nice' || (yMaxOp == '_data')) ? (- Infinity) yMaxOp
+    xMinReqd = xMin ==    Infinity
+    xMaxReqd = xMax == (- Infinity)
+    yMinReqd = yMin ==    Infinity
+    yMaxReqd = yMax == (- Infinity)
+     
+    
+    // ========== iterate over marks ==========
+    // process channels, get limits, build data maps
+    
+    markChannels = ##
+    markObs = ##
+    markSchemes = ##
+    markAreaInfo = ##
+    markPresentInds = ##
+    _marks each mk
+
+        type #= mk
+        channels = #
+        nObs = null
+        schemeInfo = #
+        missingAll = @@
+        channelsList = @@
+        noteUsed = mk,note isNullish !
+        pieUsed  = mk,pie  isNullish !
+
+
+        // ========== first iteration over channels  ==========
+        // basic checks and get indices of missing data
+
+        channelNames each ch
+
+            // mark has this channel?
+            kind = \getKind ch
+            if (kind == 'common' ||
+            | (type == 'text' && (kind == 'text')) ||
+            | (type != 'text' && noteUsed && (kind == 'text' || (kind == 'note'))) ||
+            | (kind == 'special' && (defChannels ~get ch ~hasOwnProperty type) && 
+            |   (pieUsed ! && (ch == 'pie') !)))
+
+                // push to channel list for this mark
+                channelsList ~add ch
+
+                // data and indices of missing values
+                data missingInds isConst #= \channelData mk ch
+
+                // single-mark types can only have non-constant x, xx, y, yy 
+                if (singleMarkNames ~has type && (xyChannelNames ~has ch !) && (isConst !))
+                    \markChannelError type ch 'data must be constant'
+
+                // angle channels must be constant when pie channel is used
+                if (pieUsed && (angleChannels ~has ch) && (isConst !))
+                    \markChannelError type ch
+                        'data must be constant when used with pie channel'
+
+                // add indices of missing data for this channel to those of the mark
+                if missingInds
+                    missingInds each i
+                        missingAll ~add i
+
+                // data for each channel must have the same length
+                if (isConst !)
+                    if (nObs == null)
+                        nObs \= data,length
+                    | (data,length != nObs)
+                        \markChannelError type ch
+                            'length of data not consistent with other channels'
+
+                // store channel data
+                channels;ch = data
+        
+        // if all channels are constant, set nObs to 1
+        if (nObs == null)
+            nObs = 1
+
+        // indices of present (non-missing) observations
+        presentInds = @@
+        do nObs i
+            presentInds ~add i
+        missingAll each i
+            presentInds ~'delete' i
+        if (presentInds,size == 0)        
+            + 'mark-'type', 'allMissingMsg \Error throw
+
+        
+        // ========== second iteration over channels ==========
+        // construct data maps and map data, change from data to data getters
+        
+        channelsList each ch
+        
+            data = channels;ch
+            isConst = data isArray !
+            
+            // construct data maps and map the data
+            // x, xx, y, yy, fill, stroke, shape
+            if ((xyChannelNames ~has ch) ||
+            | (ch == 'fill') || (ch == 'stroke') || (ch == 'shape'))
+
+                scheme = mk : (+ ch'Scheme')
+
+                // data map
+                if (xyChannelNames ~has ch)
+                    dataMap = dataMaps : ch,0
+                | else  // fill, stroke, shape
+                    dataMap = null
+                    if (scheme isString)
+                        scheme = @ scheme
+                    scope
+                        if (ch == 'shape' ||
+                        | (scheme isNullish ! && (typeof scheme != 'function')))
+                            dataMap \= ##
+                            dataMap \populateDataMap
+                            | ch (mk : (+ ch'Order')) (mk : (+ ch'Seq'))
+                            dataMaps;ch ~set mk dataMap
+                
+                // if channel has data map, transform non-numeric data values to integers
+                if dataMap
+                    if isConst  // default never nullish for these channels
+                        data \= \updateDataMap dataMap data
+                    | else 
+                        data each v i
+                            // if datum has missing value (on any channel) should not contribute to data map
+                            if (presentInds ~has i)
+                                data;i = \updateDataMap dataMap v
+
+                // fill, stroke - if using scheme, replace data with colors
+                if (ch == 'fill' || (ch == 'stroke'))
+                    scope
+                        if (scheme isNullish !)
+                            actualColors = \useColorScheme data scheme mk ch
+                            data \= actualColors,data  // for constant data (array data is mutated by useColorScheme)
+                            schemeInfo;ch = actualColors,info
+
+                // shape: replace integers with shape name
+                | (ch == 'shape')
+                    scheme ?? defShapeScheme \checkShapeScheme mk as s
+                        if isConst
+                            data \= s;data
+                        | else
+                            do data,length i
+                                data;i = s : data;i
+                        schemeInfo,shape = # scheme s
+            
+            // data getter for channel (constant getter has length 0)
+            channels;ch = isConst ? (fun (data)) (fun i (data;i))
+
+
+        // ========== update x and y limits ========== 
+
+        scope
+            xMinNeed = xMinReqd
+            xMaxNeed = xMaxReqd
+            yMinNeed = yMinReqd
+            yMaxNeed = yMaxReqd
+            x y xx yy size #= channels
+            if dataMaps,x,size
+                if xMinNeed
+                    xMin \= xMin <> 0
+                if xMaxNeed
+                    xMax \= xMax >< (dataMaps,x,size - 1)
+            if dataMaps,y,size
+                if yMinNeed
+                    yMin \= yMin <> 0
+                if yMaxNeed
+                    yMax \= yMax >< (dataMaps,y,size - 1)
+            if (type == 'rect' && (mk,pixels !))
+                w = channels,width
+                h = channels,height
+                corner = mk,corner
+                if (xMinNeed)
+                    presentInds each i
+                        xMin \= xMin <> (corner ? (\x i) (\x i - (\w i / 2)))
+                    xMinNeed \= false
+                if (xMaxNeed)
+                    presentInds each i
+                        xMax \= xMax >< (\x i + (\w i / (corner ? 1 2)))
+                    xMaxNeed \= false
+                if (yMinNeed)
+                    presentInds each i
+                        yMin \= yMin <> (corner ? (\y i) (\y i - (\h i / 2)))
+                    yMinNeed \= false
+                if (yMaxNeed)
+                    presentInds each i
+                        yMax \= yMax >< (\y i + (\h i / (corner ? 1 2)))
+                    yMaxNeed \= false
+            | (type == 'vBar')
+                if (xMinNeed)
+                    presentInds each i
+                        xMin \= xMin <> (\x i - (\size i / 2))
+                    xMinNeed \= false
+                if (xMaxNeed)
+                    presentInds each i
+                        xMax \= xMax >< (\x i + (\size i / 2))
+                    xMaxNeed \= false
+            | (type == 'hBar')
+                if (yMinNeed)
+                    presentInds each i
+                        yMin \= yMin <> (\y i - (\size i / 2))
+                    yMinNeed \= false
+                if (yMaxNeed)
+                    presentInds each i
+                        yMax \= yMax >< (\y i + (\size i / 2)) 
+                    yMaxNeed \= false
+            if xMinNeed
+                presentInds each i
+                    xMin \= xMin <> (\x i)
+                if xx
+                    presentInds each i
+                        xMin \= xMin <> (\xx i)
+            if xMaxNeed
+                presentInds each i
+                    xMax \= xMax >< (\x i)
+                if xx
+                    presentInds each i
+                        xMax \= xMax >< (\xx i)
+            if yMinNeed
+                presentInds each i
+                    yMin \= yMin <> (\y i)
+                if yy
+                    presentInds each i
+                        yMin \= yMin <> (\yy i)
+            if yMaxNeed
+                presentInds each i
+                    yMax \= yMax >< (\y i)
+                if yy
+                    presentInds each i
+                        yMax \= yMax >< (\yy i)
+
+        
+        // ========== area scale ========== 
+        
+        if (type == 'point')
+            markAreaInfo ~set mk
+                scope
+                    mn = presentInds reduce [a <> (channels ~area b)] Infinity
+                    mx = presentInds reduce [a >< (channels ~area b)] (- Infinity)
+                    #
+                    | 'min' mn
+                    | 'max' mx
+                    | scale
+                        if (mk,areaScale isNullish)
+                            [a]
+                        | (mk,areaScale isFunction)
+                            fun val
+                                mk ~areaScale val mn mx
+                        | (mk,areaScale isNumber)
+                            [a / mx * mk,areaScale]
+                        | else
+                            'mark-point, areaScale must be a number or function'
+                            | \Error throw
+
+
+        // ========== store mark info ========== 
+
+        markChannels ~set mk channels
+        markObs ~set mk nObs
+        markSchemes ~set mk schemeInfo
+        markPresentInds ~set mk presentInds
+
+
+    // ========== legend ==========
+
+    gLegend = $g
+    legendWidth  = 0
+    legendHeight = 0
+    legendPosition = 'legendPosition' \op
+    legendOut = legendPosition ~slice 0 3 == 'out'
+    legendGap = 'legendGap' \op
+    if ('legend' \op)
+        scope
+
+            symbolSize = 10
+            rampHeight = 'legendRampHeight' \op
+            rampWidth  = 15
+            pointSize  = 64
+            legendPadding = \fourOption _options 'legendPadding'
+            hGap = 'legendLabelPadding' \op
+            vGap = 1.5 * hGap
+
+            // legend background <rect>
+            legendRect = gLegend insert ($rect)
+            | \setAttr 'fill'         'legendBackground'
+            | \setAttr 'fill-opacity' 'legendBackgroundOpacity'
+            | \setAttr 'stroke'       'legendBorderColor'
+            | \setAttr 'stroke-width' 'legendBorderWidth'
+            | \setUnlessNullish 'rx' ('legendCornerRadius' \op)
+            
+            // legend content <g>
+            gContent = gLegend insert ($g)
+            | attr 'text-anchor' 'start'
+            | attr 'dominant-baseline' 'middle'
+            | attr 'transform'
+                (+ 'translate('legendPadding,3' 'legendPadding,0')')
+            | \setFont 'legendLabel'
+            titleFontSize = 'legendTitleFontSize' \op ?? ('fontSize' \op)
+            labelFontSize = 'legendLabelFontSize' \op ?? ('fontSize' \op)
+            titleCtx = \getCanvasContext 'legendTitle'
+            labelCtx = \getCanvasContext 'legendLabel'
+            contentHeight = 0
+            contentWidth  = 0
+
+            // iterate over marks
+            _marks each mk
+
+                type #= mk
+                channels = markChannels ~get mk
+                
+                // constant values for legend channels
+                chConst = #
+                legendFillStrokeChannels each ch
+                    chConst;ch = channels;ch,length ?
+                    | (\getChannelDefault mk ch)
+                    | (channels ~(ch))
+                setConstant = fun elm chs
+                    chs ?? legendFillStrokeChannels each ch
+                        attrName = ch \camelToKebab
+                        if (ch == 'strokeDash')
+                            attrName += 'array'
+                        elm attr attrName chConst;ch
+                    elm
+                
+                // channels (that may be) shown in legend
+                type == 'point' ?
+                | (@ 'fill' 'stroke' 'shape' 'area')
+                | (@ 'fill' 'stroke')
+                | each ch
+                    
+                    opValue      = mk : (+ ch'Legend')
+                    chFormat     = mk : (+ ch'Format') ?? [a]
+                    chSchemeInfo = markSchemes ~get mk ?: ch
+                    chScheme     = chSchemeInfo ?: 'scheme'
+                    
+                    // if showing channel in legend
+                    if (opValue == true ||
+                    | (opValue != false && channels;ch,length) &&
+                    | (ch == 'shape' || (ch == 'area') || chScheme))
+                    
+                        // title
+                        titleValue   = mk : (+ ch'Title')
+                        if (titleValue isNullish !)
+                            contentHeight +=
+                                contentHeight ? (1.5 * vGap) 0 + (titleFontSize / 2)
+                            contentWidth \= contentWidth ><
+                                titleCtx \getTextWidth titleValue
+                            gContent insert ($text)
+                            | attr 'y' contentHeight
+                            | text titleValue
+                            | \setFont 'legendTitle'
+                            contentHeight += titleFontSize / 2
+
+                        // add label function
+                        addLabel = fun nameInt symbolWidth central
+                            symbolWidth ?= symbolSize
+                            lbl = chFormat apply nameInt 
+                            elm = $text
+                            | text lbl
+                            | attr 'x' (symbolWidth + hGap)
+                            | attr 'y' contentHeight
+                            if central
+                                elm attr 'dominant-baseline' 'central'
+                            elm into gContent
+                            contentWidth \= contentWidth ><
+                                symbolWidth + hGap + (labelCtx \getTextWidth lbl)
+
+                        // fill and stroke
+                        if (ch == 'fill' || (ch == 'stroke'))
+                            scope
+ 
+                                // discrete scheme
+                                if (chScheme isArray)
+                                    dataMaps;ch ~get mk each nameInt
+                                        contentHeight += contentHeight ? vGap 0 + (labelFontSize / 2)
+                                        pointElm = null
+                                        if (type == 'point')
+                                            pointElm = \pointSymbol
+                                                # shape
+                                                    channels,shape,length ? 'circle' (channels ~shape)
+                                                | size pointSize
+                                                | x (pointSize sqrt / 2)
+                                                | y contentHeight
+
+                                        // stroke
+                                        if (ch == 'stroke')
+                                            pointElm ||
+                                                $line
+                                                | attr 'x2' symbolSize
+                                                | attr 'y1' contentHeight
+                                                | attr 'y2' contentHeight
+                                            | attr 'stroke' (chScheme : nameInt,1)
+                                            | \setConstant (@ 'strokeOpacity' 'strokeWidth' 'strokeDash')
+                                            | attr 'fill' 'none'
+
+                                        // fill
+                                        | else
+                                            pointElm || 
+                                                $rect
+                                                | attr 'y' (contentHeight - (symbolSize / 2))
+                                                | attr 'width' symbolSize
+                                                | attr 'height' symbolSize
+                                            | attr 'fill' (chScheme : nameInt,1)
+                                            | \setConstant (@ 'fillOpacity')
+                                            | attr 'stroke' 'none'
+                                        
+                                        // insert symbol and add label
+                                        | into gContent 
+                                        \addLabel nameInt
+                                        contentHeight += labelFontSize / 2
+
+                                // continuous scheme
+                                | (chScheme isFunction)
+                                    contentHeight += contentHeight ? vGap 0
+                                    gContent insert
+                                        \colorRamp chScheme rampWidth rampHeight
+                                        | attr 'transform' (+ 'translate(0 'contentHeight')')
+                                        | attr 'fill-opacity' chConst,fillOpacity
+                                    mn = chSchemeInfo : 'min' \chFormat
+                                    mx = chSchemeInfo : 'max' \chFormat
+                                    contentWidth \= contentWidth ><
+                                        rampWidth + hGap + 
+                                            labelCtx \getTextWidth mn ><
+                                                labelCtx \getTextWidth mx
+                                    gContent insert ($text)
+                                    | attr 'dominant-baseline' 'hanging'
+                                    | attr 'x' (rampWidth + hGap)
+                                    | attr 'y' contentHeight
+                                    | text mx
+                                    contentHeight += rampHeight
+                                    gContent insert ($text)
+                                    | attr 'dominant-baseline' 'auto'
+                                    | attr 'x' (rampWidth + hGap)
+                                    | attr 'y' contentHeight
+                                    | text mn
+
+                        // shape
+                        | (ch == 'shape')
+                            dataMaps,shape ~get mk each nameInt
+                                contentHeight += contentHeight ? vGap 0 + (labelFontSize / 2)
+                                \pointSymbol
+                                    # shape (chScheme : nameInt,1)
+                                    | area pointSize
+                                    | x (pointSize sqrt / 2)
+                                    | y contentHeight
+                                | \setConstant
+                                | into gContent
+                                \addLabel nameInt
+                                contentHeight += labelFontSize / 2
+
+                        // area
+                        | (ch == 'area')
+                            scope
+                                areaInfo = markAreaInfo ~get mk
+                                mn = areaInfo : 'min'
+                                mx = areaInfo : 'max'
+                                scale #= areaInfo
+                                ticks = mk,areaTickValues ?? (@ mn (mn + mx / 2) mx)
+                                if ticks,length
+                                    shp = channels,shape,length ? 'circle' (channels ~shape)
+                                    xMult yMult xShift yShift #= shapeDetails;shp
+                                    areas = ticks ~'map' scale
+                                    hLengths = areas sqrt `* xMult
+                                    vLengths = areas sqrt `* yMult
+                                    hMax = hLengths max
+                                    jumps = vLengths `>< labelFontSize `/ 2
+                                    x = 0.5 + (xShift ?? 0) * hMax
+                                    ticks each tick i
+                                        if contentHeight
+                                            contentHeight += vGap
+                                        contentHeight += (jumps : (i - 1) ?? 0) + jumps;i
+                                        \pointSymbol
+                                            # shape shp
+                                            | area areas;i
+                                            | x x 
+                                            | y (contentHeight + (jumps;i * (yShift ?? 0))) 
+                                        | \setConstant
+                                        | into gContent
+                                        \addLabel (@ tick i) hMax 'central'
+                                    contentHeight += jumps : (ticks,length - 1)
+
+            // set width and height of legend and background rectangle
+            if contentWidth                                                
+                legendWidth  \= contentWidth + legendPadding,3 + legendPadding,1
+                legendHeight \= contentHeight + legendPadding,0 + legendPadding,2
+                legendRect
+                | attr 'width'  legendWidth
+                | attr 'height' legendHeight
+
+
+    // ========== if plot option false, return legend ==========
+    
+    if ('plot' \op == false)
+        gLegend
+    | else 
+
+
+        // ========== finalize limits, get magnitudes and ranges ========== 
+
+        if (xMin isFinite && (xMax isFinite) !)
+            'x limits are not finite numbers' \Error throw
+        if (yMin isFinite && (yMax isFinite) !)
+            'y limits are not finite numbers' \Error throw
+        if (xMax - xMin < 1e-14)
+            if ((xMin == 0) && (xMax == 0) && (xMinOp == '_nice') && (xMaxOp == '_nice'))
+                xMin = - 1
+                xMax = 1
+            | else
+                'x limits are equal or the wrong way round' \Error throw
+        if (yMax - yMin < 1e-14)
+            if ((yMin == 0) && (yMax == 0) && (yMinOp == '_nice') && (yMaxOp == '_nice'))
+                yMin = - 1
+                yMax = 1
+            | else
+                'y limits are equal or the wrong way round' \Error throw
+        xMag = xMax - xMin \magnitude10
+        yMag = yMax - yMin \magnitude10
+        if (xMinOp == '_nice')
+            xMin = dataMaps,x,size ?
+            | (xMin - 0.1)
+            | (xMin \roundToMagnitude xMag 'down')
+        if (xMaxOp == '_nice')
+            xMax = dataMaps,x,size ?
+            | (xMax + 0.1)
+            | (xMax \roundToMagnitude xMag 'up')
+        if (yMinOp == '_nice')
+            yMin = dataMaps,y,size ?
+            | (yMin - 0.1)
+            | (yMin \roundToMagnitude yMag 'down')
+        if (yMaxOp == '_nice')
+            yMax = dataMaps,y,size ?
+            | (yMax + 0.1)
+            | (yMax \roundToMagnitude yMag 'up')
+        xRange = xMax - xMin
+        yRange = yMax - yMin
+
+
+        // ========== compute ticks and labels ==========
+        // (but do not create the elements yet)
+
+        xClean = 'xClean' \op ?? ('clean' \op)
+        yClean = 'yClean' \op ?? ('clean' \op)
+        usedDims = + ''(xClean ? '' 'x')(yClean ? '' 'y')
+        ticks  = # x (@) y (@)
+        labels = # x (@) y (@)
+        usedDims each dim
+            dimTicks = + dim'Ticks' \op
+            if (dimTicks || ('ticks' \op && (dimTicks isNullish)))
+                dimMin dimMax @= (dim == 'x') ? (@ xMin xMax) (@ yMin yMax)
+                dimIsCat = dataMaps;dim,size
+                dimLabels = + dim'Labels' \op 
+                if (dimLabels || ('labels' \op && (dimLabels isNullish)))
+                    useLabels = true
+                    fmt = + dim'Format' \op ?? [a]
+
+                // function to add tick and label
+                addTick =
+                    if dimIsCat
+                        nonNumericLookup = dataMaps;dim ~keys array
+                        numericSet = new Set (dataMaps;dim ~values)
+                        fun val
+                            if (typeof val == 'number')
+                                if (numericSet ~has val !)
+                                    + dim'-ticks, numeric tick value has no corresponding categorical value'
+                                    | \Error throw
+                                ticks;dim ~push val
+                                if useLabels
+                                    labels;dim ~push (nonNumericLookup;val val \fmt)
+                            | else
+                                if (dataMaps;dim ~has val !)
+                                    + dim'-ticks, categorical tick value does not appear in the data'
+                                    | \Error throw
+                                numVal = dataMaps;dim ~get val
+                                ticks;dim ~push numVal
+                                if useLabels
+                                    labels;dim ~push (val numVal \fmt)
+                    | else
+                        fun val
+                            if (typeof val != 'number')
+                                + dim'-ticks, unexpected categorical (non-numeric) tick value'
+                                | \Error throw
+                            ticks;dim ~push val
+                            if useLabels
+                                labels;dim ~push (val \fmt)
+
+                // add ticks and labels
+                if (dimIsCat ! && (+ dim'TickMin' \op))
+                    \addTick dimMin
+                tickValues = + dim'TickValues' \op
+                if (tickValues isNullish !)
+                    tickValues each v
+                        \addTick v
+                | else  // generate tick values
+                    tickStep = + dim'TickStep' \op
+                    if dimIsCat
+                        if (tickStep isNullish)
+                            tickStep = 1
+                        | else
+                            tickStep = tickStep number abs
+                            if (tickStep isInteger ! || (tickStep == 0))
+                                + 'invalid 'dim'TickStep for categorical axis'
+                                | \Error throw
+                        dataMaps;dim ~values each v
+                            if (v % tickStep == 0)    
+                                \addTick v
+                    | else
+                        if (tickStep isNullish)
+                            tickStepMag = (dim == 'x') ? xMag yMag
+                            tickStep = 10 ^ tickStepMag
+                        | else
+                            tickStep = tickStep number abs
+                            if (tickStep isFinite ! || (tickStep == 0) ||
+                            | (dimMax - dimMin / tickStep > 1000))
+                                + dim'TickStep is invalid or too small' 
+                                | \Error throw
+                            tickStepMag = tickStep \accuracy
+                        t = dimMin \roundToMagnitude tickStepMag 'up'
+                        do
+                            if (t <= (dimMax + 1e-14))
+                                \addTick t
+                                t \= t + tickStep \enforceRound tickStepMag
+                            | else
+                                stop
+                if (dimIsCat ! && (+ dim'TickMax' \op))
+                    \addTick dimMax
+
+    
+        // ========== left, right, top, bottom space ========== 
+
+        getXAxisSpace = fun
+            space = 'xAxisPadding' \op  // used even if axis hidden
+            xAxis = 'xAxis' \op
+            if (xAxis || ('axis' \op && (xAxis isNullish)))
+                space += 'xAxisWidth' \op ?? ('axisWidth' \op) / 2
+            if ticks,x,length
+                space += 'xTickLength' \op ?? ('tickLength' \op)
+                if labels,x,length
+                    space += 'xLabelPadding' \op +
+                        'xLabelFontSize' \op ?? ('fontSize' \op) 
+            space
+        yAxisSpace = null
+        getYAxisSpace = fun
+            space = 'yAxisPadding' \op  // used even if axis hidden
+            yAxis = 'yAxis' \op
+            if (yAxis || ('axis' \op && (yAxis isNullish)))
+                space += 'yAxisWidth' \op ?? ('axisWidth' \op) / 2
+            if ticks,y,length
+                space += 'yTickLength' \op ?? ('tickLength' \op)
+                if labels,y,length
+                    ctx = \getCanvasContext 'yLabel'
+                    space += 'yLabelPadding' \op + 
+                        labels,y reduce [a >< (ctx \getTextWidth b)] 0
+            yAxisSpace \= space
+        getTitle = fun dim  // dim can be x, y or plot
+            title = + dim'Title' \op
+            if (dim == 'x' || (dim == 'y') && (title isNullish))
+                vbleName = _marks,0 ?: dim
+                if (vbleName isString && (vbleName,0 == '~'))
+                    title = vbleName ~slice 1                    
+            | (title == false)  // do not use auto title
+                title = null
+            title
+        getTitleSpace = fun dim  // dim can be x, y or plot
+            \getTitle dim isNullish ? 0
+                (+ dim'TitleFontSize' \op) ?? ('fontSize' \op) +
+                | (+ dim'TitlePadding' \op)
+        getSideSpace = fun side
+            yClean ! && ('yAxisPosition' \op == side) ?
+            | (yAxisSpace ?? (\getYAxisSpace) + (\getTitleSpace 'y'))
+            | 0
+        getTopSpace = fun
+            'xAxisPosition' \op == 'bottom' || xClean ?
+            | (\getTitleSpace 'plot')
+            | (\getXAxisSpace + (\getTitleSpace 'x'))
+        getBottomSpace = fun
+            if xClean
+                0
+            | ('xAxisPosition' \op == 'bottom')
+                \getXAxisSpace + (\getTitleSpace 'x')
+            | else
+                \getTitleSpace 'plot'
+        paneSpaceOp = 'paneSpace' \op
+        topSpace rightSpace bottomSpace leftSpace @=
+            paneSpaceOp isArray ? paneSpaceOp (4 empties ~fill paneSpaceOp)
+        topSpace    ?= \getTopSpace
+        rightSpace  ?= \getSideSpace 'right'
+        bottomSpace ?= \getBottomSpace
+        leftSpace   ?= \getSideSpace 'left'
+
+
+        // ========== width, height, paneWidth, paneHeight, xScale, yScale ==========
+
+        plotSpace = \fourOption _options 'plotSpace'
+        paneHeight = 'paneHeight' \op 
+        paneWidth  = 'paneWidth'  \op 
+        if (paneHeight isNullish)
+            height = 'height' \op
+            paneHeight = height - plotSpace,0 - topSpace - bottomSpace - plotSpace,2
+            if (paneHeight <= 0)
+                'computed pane height is less than or equal to 0' \Error throw
+        | else
+            height = plotSpace,0 + topSpace + plotSpace,2 +
+                paneHeight + bottomSpace ><
+                    legendOut ? legendHeight 0
+        if (paneWidth isNullish)
+            width = 'width' \op
+            paneWidth = width - plotSpace,3 - leftSpace - rightSpace - plotSpace,1
+            if (legendOut && legendWidth)
+                paneWidth -= legendWidth + legendGap
+            if (paneWidth <= 0)
+                'computed pane width is less than or equal to 0' \Error throw             
+        | else
+            width = plotSpace,3 + leftSpace + paneWidth + rightSpace + plotSpace,1
+            if (legendOut && legendWidth)
+                width += legendWidth + legendGap
+        xScale = [a - xMin / xRange * paneWidth]
+        yScale = [a - yMin / yRange * paneHeight -]
+
+
+        // ========== container svg/g, pane and grid ==========
+        
+        // container
+        if ('_subplot' \op)
+            container = $g
+        | else
+            container = $svg
+            | attr 'viewBox' (+ '0 0 'width' 'height)
+            | style 'cursor' 'default'
+            | style '-moz-user-select' 'none'
+            | style '-webkit-user-select' 'none'
+            | style '-ms-user-select' 'none'
+            | style 'user-select' 'none'
+            if (\op 'fit' != 'preserve')
+                container
+                | attr 'width'  width
+                | attr 'height' height 
+        \op 'class' as opClass
+            if (opClass isNullish !)
+                container addClass opClass
+
+        // background <rect>
+        container insert ($rect)
+        | attr 'width'  width
+        | attr 'height' height
+        | \setAttr 'fill' 'background'
+        | as bgrd
+            cornerRadius = \op 'cornerRadius'
+            if (cornerRadius isNullish !)
+                bgrd attr 'rx' cornerRadius
+        
+        // plot <g>
+        gPlot = container insert ($g)
+        scope
+            shift = legendPosition == 'out-left' && legendWidth ?
+            | (legendWidth + legendGap)
+            | 0
+            gPlot attr 'transform'
+                + 'translate('(plotSpace,3 + shift)' 'plotSpace,0')'
+
+        // pane
+        gPlot insert ($rect)
+        | attr 'width'  paneWidth
+        | attr 'height' paneHeight
+        | attr 'x' leftSpace            
+        | attr 'y' topSpace
+        | \setAttr 'fill'         'paneBackground'
+        | \setAttr 'stroke-width' 'paneBorderWidth'  
+        | \setAttr 'stroke'       'paneBorderColor'
+
+        // clip path
+        paneClipId = null
+        if ('clip' \op)
+            paneClipId = + 'pane-clip-'clipCount
+            clipCount += 1
+            gPlot insert ($defs)
+            | insert ($clipPath)
+            | attr 'id' paneClipId
+            | insert ($rect)
+            | attr 'width'  paneWidth
+            | attr 'height' paneHeight
+            | attr 'x' leftSpace            
+            | attr 'y' topSpace
+
+        // grid
+        usedDims each dim
+            if (ticks;dim,length)
+                dimGrid = + dim'Grid' \op
+                if (dimGrid || ('grid' \op && (dimGrid isNullish)))
+                    gGrid = gPlot insert ($g)
+                    | \setDimAttr dim 'stroke-width'   'gridWidth'
+                    | \setDimAttr dim 'stroke'         'gridColor'
+                    | \setDimAttr dim 'stroke-opacity' 'gridOpacity'
+                    | attr 'transform'
+                        + 'translate('(leftSpace)' '(topSpace + paneHeight)')'
+                    ticks;dim each val
+                        if (dim == 'x')
+                            x1 = val \xScale
+                            x2 = x1
+                            y1 = 0
+                            y2 = - paneHeight
+                        | else
+                            x1 = 0
+                            x2 = paneWidth
+                            y1 = val \yScale
+                            y2 = y1 
+                        $line
+                        | attr 'x1' x1
+                        | attr 'x2' x2 
+                        | attr 'y1' y1 
+                        | attr 'y2' y2 
+                        | into gGrid
+
+
+        // ========== axes, ticks, labels and titles ==========
+
+        usedDims each dim
+
+            xDim = dim == 'x'
+            top = xDim && ('xAxisPosition' \op == 'top')
+            bottom = xDim && (top !)
+            right = xDim ! && ('yAxisPosition' \op == 'right')
+            left = xDim || right !
+            xAxisPadding = 'xAxisPadding' \op 
+            yAxisPadding = 'yAxisPadding' \op 
+            
+            // wrapper <g> for axis, ticks, labels and title
+            xShiftWrap = leftSpace + 
+            | (right ? (paneWidth + yAxisPadding) (left ? (- yAxisPadding) 0))
+            yShiftWrap = topSpace +
+            | (top ? (- xAxisPadding) (bottom ? (paneHeight + xAxisPadding) paneHeight))
+            gWrap = gPlot insert ($g)  
+            | attr 'text-anchor'
+                xDim ? ('xLabelAlign' \op) (left ? 'end' 'start')
+            | attr 'dominant-baseline'
+                xDim ? (bottom ? 'hanging' 'auto') ('yLabelAlign' \op)
+            | \setFont (+ dim'Label')
+            | attr 'transform' (+ 'translate('xShiftWrap' 'yShiftWrap')')
+
+            // axis
+            axisUsed = false
+            halfAxisWidth = 0
+            dimAxis = + dim'Axis' \op
+            if (dimAxis || ('axis' \op && (dimAxis isNullish)))
+                axisUsed = true
+                $line as line
+                    line  
+                    | \setDimAttr dim 'stroke-width'   'axisWidth'
+                    | \setDimAttr dim 'stroke'         'axisColor'
+                    | \setDimAttr dim 'stroke-opacity' 'axisOpacity'
+                    | attr (+ dim'2') (xDim ? paneWidth (- paneHeight))
+                    | into gWrap
+                    halfAxisWidth \= line attr 'stroke-width' / 2
+
+            // ticks and labels - loop over ticks
+            tickLength = + dim'TickLength' \op ?? ('tickLength' \op)
+            labelPadding = + dim'LabelPadding' \op
+            labelRotate = + dim'LabelRotate' \op
+            ticks;dim each val i
+                gTick = gWrap insert ($g)
+                | attr 'transform'
+                    dim == 'x' ?
+                    | (+ 'translate('(val \xScale)' '(top ? (- halfAxisWidth) halfAxisWidth)')')
+                    | (+ 'translate('(left ? (- halfAxisWidth) halfAxisWidth)' '(val \yScale)')')
+                
+                // tick
+                $line
+                | \setDimAttr dim 'stroke-width'   'tickWidth'
+                | \setDimAttr dim 'stroke'         'tickColor'
+                | \setDimAttr dim 'stroke-opacity' 'tickOpacity'
+                | attr (xDim ? 'y2' 'x2') (bottom || right ? tickLength (- tickLength))
+                | into gTick
+                
+                // label
+                if labels;dim,length
+                    scope
+                        labelShift = tickLength + labelPadding
+                        labelOffset = + dim'LabelOffset' \op
+                        lbl = $text
+                        | text labels;dim;i
+                        | attr (xDim ? 'y' 'x') (bottom || right ? labelShift (- labelShift))
+                        | attr (xDim ? 'x' 'y') (xDim ? labelOffset (- labelOffset))
+                        if (labelRotate isNullish !)
+                            center = labelShift
+                            if xDim
+                                center += + dim'LabelFontSize' \op ?? ('fontSize' \op) / 2
+                            lbl attr 'transform'
+                                xDim ?
+                                | (+ 'rotate('labelRotate',0,'(top ? (- center) center)')')
+                                | (+ 'rotate('labelRotate','(left ? (- center) center)',0)')
+                        lbl into gTick
+
+            // titles
+            scope
+                dimTitle = \getTitle dim                   
+                if (dimTitle isNullish !)
+                    if xDim
+                        x = 'xTitleOffset' \op
+                        textAnchor = 'xTitleAlign' \op
+                        if (textAnchor == 'end')
+                            x += paneWidth
+                        | (textAnchor != 'start')
+                            x += paneWidth / 2
+                            textAnchor = 'middle'
+                        dominantBaseline = bottom ? 'hanging' 'auto'
+                        y = 'xTitlePadding' \op + halfAxisWidth
+                        if (ticks;dim,length)
+                            y += tickLength
+                        if (labels;dim,length)
+                            y += labelPadding +
+                                'xLabelFontSize' \op ?? ('fontSize' \op)
+                        if top
+                            y *= - 1
+                        rotate = null
+                    | else  // y title
+                        x = 'yTitlePadding' \op + (yAxisSpace ?? (\getYAxisSpace)) -
+                            yAxisPadding  // y axis padding is in gWrap transfn and yAxisSpace
+                        if left
+                            x *= - 1
+                        textAnchor = 'yTitleAlign' \op
+                        y = if (textAnchor == 'start')
+                            0
+                        | (textAnchor == 'end')
+                            paneHeight -
+                        | else
+                            paneHeight / 2 -
+                        dominantBaseline = left ? 'auto' 'hanging'
+                        rotate = + 'rotate('(-90)' 'x' 'y')'
+                    $text
+                    | text dimTitle
+                    | attr 'x' x                            
+                    | attr 'y' y                            
+                    | attr 'text-anchor' textAnchor   
+                    | attr 'dominant-baseline' dominantBaseline
+                    | \setUnlessNullish 'transform' rotate                   
+                    | \setFont (+ dim'Title')
+                    | into gWrap
+
+        // plot title
+        \getTitle 'plot' as plotTitle
+            if (plotTitle isNullish !)
+                top = 'xAxisPosition' \op == 'bottom' || xClean
+                padding = 'plotTitlePadding' \op
+                align = 'plotTitleAlign' \op
+                $text
+                | text plotTitle
+                | attr 'x'
+                    if (align == 'start')
+                        leftSpace - 
+                            'yAxisPosition' \op == 'left' && (yClean !) ?
+                            | (yAxisSpace ?? (\getYAxisSpace))
+                            | 0
+                    | (align == 'end')
+                        leftSpace + paneWidth + 
+                            'yAxisPosition' \op == 'right' && (yClean !) ?
+                            | (yAxisSpace ?? (\getYAxisSpace))
+                            | 0
+                    | else
+                        leftSpace + paneWidth + rightSpace / 2
+                    | + ('plotTitleOffset' \op)
+                | attr 'y'
+                    top ? (topSpace - padding) (topSpace + paneHeight + padding)
+                | attr 'text-anchor' align
+                | attr 'dominant-baseline' (top ? 'auto' 'hanging')                   
+                | \setFont 'plotTitle'
+                | into gPlot
+
+
+        // ========== draw marks ==========
+
+        // <g> containing all mark elements
+        gMarks = gPlot insert ($g)
+        | attr     'font-size'   ('fontSize' \op + 'px')
+        | \setAttr 'font-family' 'fontFamily'
+        | \setAttr 'font-style'  'fontStyle'
+        | \setAttr 'font-weight' 'fontWeight'
+        if paneClipId
+            gMarks attr 'clip-path' (+ 'url(#'paneClipId')')
+
+        // iterate over marks
+        _marks each mk
+
+            type #= mk
+            channels = markChannels ~get mk
+            xOffset yOffset size #= channels
+            nObs = markObs ~get mk
+            presentInds = markPresentInds ~get mk
+
+            // x, xx, y, yy getters   
+            x =  fun i
+                channels ~x  i \xScale + leftSpace + (\xOffset i)
+            xx = fun i
+                channels ~xx i \xScale + leftSpace + (\xOffset i)
+            y =  fun i
+                channels ~y  i \yScale + topSpace + paneHeight - (\yOffset i)
+            yy = fun i
+                channels ~yy i \yScale + topSpace + paneHeight - (\yOffset i)
+
+            // text element
+            textElm = fun i ti xi yi defaultCenter
+                elm = $text
+                | attr 'x' xi
+                | attr 'y' yi
+                | text ti
+                | attr 'text-anchor'
+                    defaultCenter ?
+                    | (_options,hAlign ?? 'middle')  // hack for closed line
+                    | (channels ~hAlign i)
+                | attr 'dominant-baseline' (channels ~vAlign i)
+                | \setUnlessNullish 'font-family' (channels ~fontFamily i) 
+                | \setUnlessNullish 'font-style'  (channels ~fontStyle  i) 
+                | \setUnlessNullish 'font-weight' (channels ~fontWeight i)
+                fontSize = channels ~fontSize i
+                if (fontSize isNullish !)
+                    elm attr 'font-size' (fontSize + 'px')
+                rot = channels ~rotate i
+                if (rot isNullish !)
+                    elm attr 'transform' (+ 'rotate('rot','xi','yi')')
+                elm
+
+            // add note element if used
+            addNote = fun i xi yi defaultCenter
+                if channels,note
+                    ti = channels ~note i
+                    if (ti string)
+                        xi += channels ~noteXOffset i
+                        yi -= channels ~noteYOffset i
+                        colorChannel = channels ~noteColor as nc
+                            nc == '_fill' || (nc == '_stroke') ?
+                            | (nc ~slice 1)
+                            | 'noteColor'
+                        opacityChannel = channels ~noteOpacity as nOp
+                            nOp == '_fillOpacity' || (nOp == '_strokeOpacity') ?
+                            | (nOp ~slice 1)
+                            | 'noteOpacity'
+                        gMarks insert
+                            \textElm i ti xi yi defaultCenter
+                        | attr 'stroke' 'none'
+                        | attr 'fill' (channels ~(colorChannel) i)
+                        | attr 'fill-opacity' (channels ~(opacityChannel) i)
+                        | \finishNote channels i
+
+            // point
+            if (type == 'point')
+                scope
+                    areaScale = markAreaInfo ~get mk : 'scale'
+                    presentInds each i
+                        xi = \x i
+                        yi = \y i
+                        elm = \pointSymbol
+                            # shape (channels ~shape i)
+                            | area (channels ~area i \areaScale)
+                            | x xi 
+                            | y yi 
+                        gMarks insert elm
+                        | \finishMark mk channels i
+                        \addNote i xi yi
+
+            // segment
+            | (type == 'segment')
+                presentInds each i
+                    xxi = \xx i
+                    yyi = \yy i
+                    gMarks insert ($line)
+                    | attr 'x1' (\x i)
+                    | attr 'y1' (\y i)
+                    | attr 'x2' xxi
+                    | attr 'y2' yyi
+                    | \finishMark mk channels i
+                    \addNote i xxi yyi
+
+            // rect
+            | (type == 'rect')
+                if mk,pixels
+                    w = channels,width
+                    h = channels,height
+                | else
+                    w = fun i
+                        channels ~width  i / xRange * paneWidth
+                    h = fun i 
+                        channels ~height i / yRange * paneHeight
+                presentInds each i
+                    xi = \x i
+                    yi = \y i
+                    wi = \w i + abs
+                    hi = \h i + abs
+                    if mk,corner
+                        xiLeft = xi
+                        yiTop  = yi - hi
+                        cxi = xi + (wi / 2)
+                        cyi = yi + yiTop / 2
+                    | else  // centered
+                        xiLeft = xi - (wi / 2)
+                        yiTop  = yi - (hi / 2)
+                        cxi = xi
+                        cyi = yi
+                    if (mk,subplot isNullish !)  // subplot
+                        sp = tp ~option (# width wi height hi _subplot true)
+                        mk ~subplot sp i (channels ~name i ?? null)
+                        gMarks insert (sp ~plot)
+                        | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
+                        | \finishMark mk channels i true
+                    | else  // standard rect
+                        gMarks insert ($rect)
+                        | attr 'x' xiLeft
+                        | attr 'y' yiTop
+                        | attr 'width' wi
+                        | attr 'height' hi
+                        | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                        | \finishMark mk channels i
+                        \addNote i cxi cyi
+                    
+            // hLink, vLink
+            | ((type == 'hLink') || (type == 'vLink'))
+                presentInds each i
+                    xxi = \xx i
+                    yyi = \yy i
+                    d = d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
+                        #
+                        | source (@ (\x  i)  (\y i))
+                        | target (@ xxi yyi)
+                    gMarks insert ($path)
+                    | attr 'd' d
+                    | \finishMark mk channels i
+                    \addNote i xxi yyi
+
+            // edge
+            | (type == 'edge')
+                presentInds each i
+                    xi  = \x i
+                    yi  = \y i
+                    xxi = \xx i
+                    yyi = \yy i
+                    ri  = (xi - xxi ^ 2) + (yi - yyi ^ 2) sqrt / 2 /
+                        \size i ^ (1 / 3)
+                    cwi = channels ~clockwise i boolean number
+                    gMarks insert ($path)
+                    | attr 'd' (+ 'M 'xi','yi' A 'ri' 'ri' 0 0 'cwi' 'xxi','yyi)
+                    | \finishMark mk channels i
+                    \addNote i xxi yyi
+
+            // text
+            | (type == 'text')
+                presentInds each i
+                    gMarks insert 
+                        \textElm i (channels ~'text' i) (\x i) (\y i)
+                    | \finishMark mk channels i
+
+            // arc
+            | (type== 'arc')
+                if (channels,pie)
+                    pieData = d3 ~pie
+                    | ~startAngle (channels ~startAngle)  // angle channels are constant
+                    | ~endAngle   (channels ~endAngle)
+                    | ~padAngle   (channels ~padAngle)
+                    | ~sortValues
+                        if (mk,pieSort isNullish) null 
+                        |  (mk,pieSort == 'desc') [b - a]
+                        |  (mk,pieSort == 'asc')  [a - b]
+                        |  (typeof mk,pieSort == 'function') mk,pieSort
+                        |  else
+                            'mark-arc, invalid pieSort option' \Error throw
+                    | call
+                        presentInds map i (channels ~pie i)
+                presentInds each i j
+                    xi = \x i
+                    yi = \y i
+                    arcObj = d3 ~arc
+                    | ~innerRadius  (channels ~innerRadius  i) 
+                    | ~outerRadius  (channels ~outerRadius  i) 
+                    | ~padRadius    (channels ~padRadius    i)
+                    | ~cornerRadius (channels ~cornerRadius i)
+                    if channels,pie
+                        arcObj
+                        | ~startAngle pieData;j,startAngle
+                        | ~endAngle   pieData;j,endAngle
+                        | ~padAngle   pieData;j,padAngle
+                    | else
+                        arcObj
+                        | ~startAngle (channels ~startAngle i) 
+                        | ~endAngle   (channels ~endAngle   i)
+                        | ~padAngle   (channels ~padAngle   i)
+                    gMarks insert ($path)
+                    | attr 'd' (\arcObj)
+                    | attr 'transform' (+ 'translate('xi' 'yi')')
+                    | \finishMark mk channels i
+                    cxi cyi @= arcObj ~centroid
+                    \addNote i (xi + cxi) (yi + cyi)
+
+            // hBar, vBar
+            | (type == 'hBar' || (type == 'vBar'))
+                presentInds each i
+                    xi = \x i
+                    yi = \y i
+                    nxi = xi
+                    nyi = yi
+                    si = \size i
+                    if (type == 'hBar')
+                        yShift = si / yRange * paneHeight / 2
+                        xxi = \xx i
+                        yyi = yi - yShift
+                        yi  = yi + yShift
+                    | else  // vBar
+                        xShift = si / xRange * paneWidth / 2
+                        yyi = \yy i
+                        xxi = xi + xShift
+                        xi  = xi - xShift
+                    gMarks insert ($polygon)
+                    | attr 'points' (+ xi','yi' 'xxi','yi' 'xxi','yyi' 'xi','yyi)
+                    | \finishMark mk channels i
+                    \addNote i nxi nyi
+
+            | else  // line, hBand, vBand
+                scope
+                    curveType = mk,curve ?? 'linear'
+                    if (curveTypes ~has curveType !)
+                        + 'mark-'type', invalid curve type: 'mk,curve \Error throw
+                    lineFunc = 
+                        if (type == 'line')                
+                            d3 ~line [\x a] [\y a]
+                        | (type == 'hBand')
+                            d3 ~area ~x [\x a] ~y0 [\y a] ~y1 [\yy a]
+                        | (type == 'vBand')
+                            d3 ~area ~x0 [\x a] ~x1 [\xx a] ~y [\y a]
+                    | ~curve (d3 : (+ 'curve'(curveType \capitalize)))
+                    dStr =
+                        if (mk,missing == 'gap')
+                            lineFunc ~defined [presentInds ~has a] call 
+                                \[do nObs i (yield i)]
+                        | else
+                            \lineFunc presentInds
+                    gMarks insert ($path)
+                    | attr 'd' dStr
+                    | \finishMark mk channels  // index not required - all other channels constant
+                    if channels,note
+                        if (type == 'line' && (curveType ~slice (-6) == 'Closed'))
+                            cx cy @= presentInds map i (@ (\x i) (\y i))
+                            | \polygonCentroid
+                            \addNote null cx cy 'defaultCenter'
+                        | else
+                            maxInd = presentInds max
+                            fxi = \x maxInd
+                            fyi = \y maxInd
+                            if (type == 'line')
+                                \addNote null fxi fyi
+                            | (type == 'hBand')
+                                \addNote null fxi (fyi + (\yy maxInd) / 2)
+                            | else  // vBand
+                                \addNote null (fxi + (\xx maxInd) / 2) fyi
+
+
+        // ========== insert legend ==========
+
+        if legendWidth       
+            scope
+                if legendOut
+                    xPosn = legendPosition == 'out-left' ?
+                    | plotSpace,3
+                    | (width - plotSpace,1 - legendWidth)
+                    yPosn = plotSpace,0 + topSpace
+                | else    
+                    xPosn =
+                        if (legendPosition ~endsWith 'left')
+                            leftSpace + legendGap
+                        | (legendPosition ~endsWith 'right')
+                            leftSpace + paneWidth - legendGap - legendWidth
+                        | else  // center
+                            leftSpace + (paneWidth / 2) - (legendWidth / 2)
+                    yPosn =
+                        if (legendPosition ~startsWith 'top')
+                            topSpace + legendGap
+                        | (legendPosition ~startsWith 'bottom')
+                            topSpace + paneHeight - legendGap - legendHeight
+                        | else  // center
+                            topSpace + (paneHeight / 2) - (legendHeight / 2)
+                gLegend attr 'transform' (+ 'translate('xPosn' 'yPosn')')
+                legendOut ? container gPlot insert gLegend
+
+
+        // ========== insert and return container ==========
+
+        if target
+            typeof target == 'string' ? (select target) target ~append container
+        container
+ 
+
+// ========== other methods ==========
+
+// option method
+tp :: 'option' = fun newOptions
+    if (newOptions isNullish)
+        this,_options = #
+    | else
+        this,_options assign newOptions
+    this
+
+// data method
+tp :: 'data' = fun d
+    if this,_dataset
+        'dataset already attached' \Error throw
+    \checkArrayOfObjects d
+    this,_dataset = d
+    this
+
+// drop method
+tp :: 'drop' = fun classes
+    this,_marks =
+        if classes
+            classes = classes trim ~split &/\s+/
+            this,_marks filter
+                fun mark
+                    if (mark : 'class')
+                        markClasses = mark : 'class' trim ~split &/\s+/
+                        markClasses intersection classes : 'size' !
+                    | else
+                        true
+        | else
+            @
+    this
+
+// each method
+tp :: 'each' = fun d f
+    \checkArrayOfObjects d
+    d ~forEach f this
+    this
+
+// mark methods
+markNames each name
+    tp :: name = fun rest
+        if (rest,length == 0)
+            'at least one argument expected' \Error throw
+        | (rest,length == 1)
+            options = rest,0
+        | else
+            x y options @= rest
+        if (options ?: 'data' isNullish !)
+            \checkArrayOfObjects options,data
+        mkObj = #
+        if (rest,length > 1)
+            mkObj attach x y
+        mkObj assign options
+        mkObj,type = name
+        this,_marks ~push mkObj
+        this
+
+// static methods
+array markNames 'option' 'data' 'drop' 'each' each name
+    tp;name = fun rest
+        po = new tp
+        po;name ~'apply' po rest
+        po
+
+// stack method
+tp,stack = fun data ops
+    level groupBy stack #= ops
+    offset <- 'none'
+    ord = ops : 'order' ?? 'none' 
+    missing <- 'throw'
+    \checkArrayOfObjects data
+    if (data,length == 0)
+        'empty data array' \Error throw
+    if (level isNullish || (groupBy isNullish) || (stack isNullish))
+        'level, groupBy and stack options are required' \Error throw
+    data each d
+        if ((d;level   \isInfOrNaN) ||
+        |   (d;groupBy \isInfOrNaN) ||
+        |   (d;stack   \isInfOrNaN))
+            nonFiniteMsg \Error throw
+    if (missing == 'skip')
+        data = data filter
+            fun d
+                d;level isNullish ||
+                | (d;groupBy isNullish) ||
+                | (d;stack isNullish) !
+        if (data,length == 0)
+            allMissingMsg \Error throw
+    | else  // 'throw' or 'zero'
+        data each d
+            if (d;level   isNullish) (+ 'missing "'level'" value' \Error throw)
+            if (d;groupBy isNullish) (+ 'missing "'groupBy'" value' \Error throw)
+            if (d;stack   isNullish && (missing != 'zero'))
+                + 'missing "'stack'" value' \Error throw
+    groupNames = @
+    levelNames = new Set (data pick level) array
+    wideData = data group groupBy
+        fun arr gName
+            groupNames ~push gName
+            if (new Set (arr pick level) : 'size' < arr,length)
+                + 'duplicate 'level'-'groupBy' pair in data' \Error throw
+            obj = #
+            arr each row
+                obj : row;level = row;stack
+            obj
+    | ~values array
+    validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
+    validOffset = @@ 'expand' 'diverging' 'none' 'silhouette' 'wiggle'
+    levels = d3 ~stack
+    | ~keys levelNames
+    | ~value [a;b ?? 0]  // possible null/undef if missing is 'zero' or if missing rows of data
+    | ~'order'
+        if (ord == 'asc')  d3,stackOrderAscending
+        |  (ord == 'desc') d3,stackOrderDescending
+        |  (validOrder ~has ord) (d3 : (+ 'stackOrder'(\capitalize ord)))
+        |  else ('invalid stack order' \Error throw)
+    | ~offset
+        if (validOffset ~has offset) (d3 : (+ 'stackOffset'(\capitalize offset)))
+        |  else ('invalid stack offset' \Error throw)
+    | call wideData
+    | map row i
+        #
+        | name levelNames;i
+        | 'lower' (row map pair (pair,0))
+        | 'upper' (row map pair (pair,1))
+    # attach groupNames levels
+
+
+// ========== color schemes ==========
+
+// d3.schemeCategory10: https://github.com/d3/d3-scale-chromatic
+tp,cat = 
+    @ '#1f77b4' '#ff7f0e' '#2ca02c' '#d62728' '#9467bd'
+    | '#8c564b' '#e377c2' '#7f7f7f' '#bcbd22' '#17becf'
