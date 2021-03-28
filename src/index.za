@@ -4,8 +4,8 @@
 //////////////////////////////////////////////////////////////
 
 
-importAll 'd3-shape' d3
-// importAll 'https://cdn.skypack.dev/d3-shape' d3  // dev
+// importAll 'd3-shape' d3
+importAll 'https://cdn.skypack.dev/d3-shape' d3  // dev
 import './defaults.js' defOptions defChannels defShapeScheme
 export tp
 
@@ -25,6 +25,11 @@ singleMarkNames = @@ 'line' 'hBand' 'vBand'
 
 // channel names
 channelNames = new Set (defChannels ~keys)
+
+// channels that cannot be updated
+nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach'
+| 'note' 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass'
+| 'noteName' 'noteAttach'
 
 // kind of channel
 getKind = fun ch
@@ -168,9 +173,10 @@ setUnlessNullish = fun elm attrName val
         elm attr attrName val
     elm
 
-// finish mark: set common channels and call the mark's callback
-finishMark = fun elm mk channels i notFillStroke
-    if (notFillStroke !)
+// finish mark: set attributes/properties and call the callback
+finishMark = fun elm mk channels i subtype
+    elm,__tp__ = # type mk,type attach subtype
+    if (subtype != 'subplot')
         elm
         | attr 'fill'           (channels ~fill i)
         | attr 'fill-opacity'   (channels ~fillOpacity i)
@@ -178,7 +184,7 @@ finishMark = fun elm mk channels i notFillStroke
         | attr 'stroke-opacity' (channels ~strokeOpacity i)
         | attr 'stroke-width'   (channels ~strokeWidth i)
         | \setUnlessNullish 'stroke-linecap'   (channels ~strokeCap  i) 
-        | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i) 
+        | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i)
     c = channels ~'class' i
     if (c isNullish !)
         elm addClass c
@@ -1491,8 +1497,8 @@ tp :: 'plot' = fun target
                         elm = \pointSymbol
                             # shape (channels ~shape i)
                             | area (channels ~area i \areaScale)
-                            | x xi 
-                            | y yi 
+                            | x xi
+                            | y yi
                         gMarks insert elm
                         | \finishMark mk channels i
                         \addNote i xi yi
@@ -1540,7 +1546,7 @@ tp :: 'plot' = fun target
                         mk ~subplot sp i (channels ~name i ?? null)
                         gMarks insert (sp ~plot)
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
-                        | \finishMark mk channels i true
+                        | \finishMark mk channels i 'subplot'
                     | else  // standard rect
                         gMarks insert ($rect)
                         | attr 'x' xiLeft
@@ -1588,8 +1594,8 @@ tp :: 'plot' = fun target
                     | \finishMark mk channels i
 
             // arc
-            | (type== 'arc')
-                if (channels,pie)
+            | (type == 'arc')
+                if channels,pie
                     pieData = d3 ~pie
                     | ~startAngle (channels ~startAngle)  // angle channels are constant
                     | ~endAngle   (channels ~endAngle)
@@ -1624,7 +1630,7 @@ tp :: 'plot' = fun target
                     gMarks insert ($path)
                     | attr 'd' (\arcObj)
                     | attr 'transform' (+ 'translate('xi' 'yi')')
-                    | \finishMark mk channels i
+                    | \finishMark mk channels i (channels,pie ? 'pie')
                     cxi cyi @= arcObj ~centroid
                     \addNote i (xi + cxi) (yi + cyi)
 
@@ -1725,7 +1731,7 @@ tp :: 'plot' = fun target
         container
  
 
-// ========== other methods ==========
+// ========== other instance methods ==========
 
 // option method
 tp :: 'option' = fun newOptions
@@ -1784,14 +1790,17 @@ markNames each name
         this,_marks ~push mkObj
         this
 
-// static methods
+
+// ========== static methods ==========
+
+// methods that can be used as instance or static
 array markNames 'option' 'data' 'drop' 'each' each name
     tp;name = fun rest
         po = new tp
         po;name ~'apply' po rest
         po
 
-// stack method
+// stack
 tp,stack = fun data ops
     level groupBy stack #= ops
     offset <- 'none'
@@ -1853,6 +1862,62 @@ tp,stack = fun data ops
         | 'lower' (row map pair (pair,0))
         | 'upper' (row map pair (pair,1))
     # attach groupNames levels
+
+// update
+tp,update = fun elmts pairs
+    
+    // check elements
+    if (elmts isString)
+        elmts = selectAll elmts
+    | (elmts ?: Symbol,iterator !)  // assume is a single element
+        elmts = @ elmts
+    | (elmts isArray !)
+        elmts = elmts array
+    if (elmts,length == 0)
+        + 'must pass at least one element to update' \Error throw
+    if (elmts some [a ~hasOwnProperty '__tp__' !])
+        + 'only mark elements can be updated' \Error throw
+    type subtype #= elmts,0,__tp__
+    if (elmts some [a,__tp__,type != type || (a,__tp__,subtype != subtype)]) 
+        + 'updated elements must all have the same type (and subtype)'
+        | \Error throw
+    
+    // check channels
+    channels = new Set (Object ~keys pairs)
+    channels each ch
+        if (channelNames ~has ch !)
+            + ch' is not a channel' \Error throw
+        if (nonUpdateChannelNames ~has ch)
+            + ch' channel cannot be updated' \Error throw
+        if (type != 'text' && (defChannels ~get ch : '_kind' == 'text'))
+            + 'can only update 'ch' channel of text marks' \Error throw
+            
+    // channels that map directly to an attribute
+    channels each ch
+        _attr = defChannels ~get ch : '_attr'
+        if _attr
+            elmts attr (_attr == true ? (ch \camelToKebab) _attr) pairs;ch
+            channels ~'delete' ch
+
+    // point
+    if (type == 'point')
+
+    // text
+    | (type == 'text')
+        // INCLUDE TEXT AND ROTATE CHANNELS
+        // // text channel
+        // if (channels ~has 'text')
+        //     elmts text (pairs : 'text')
+        //     channels ~'delete' 'text'
+        //     if (channels ~has 'rotate')
+        // elmts attr 'transform'
+        //     [+ 'rotate('pairs,rotate','','yi')')
+        // channels ~'delete' 'rotate'
+
+   
+   
+   // !!!!! WHEN DONE, CHECK channels IS EMPTY - THROW IF NOT
+
 
 
 // ========== color schemes ==========
