@@ -27,9 +27,9 @@ singleMarkNames = @@ 'line' 'hBand' 'vBand'
 channelNames = new Set (defChannels ~keys)
 
 // channels that cannot be updated
-nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach'
-| 'note' 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass'
-| 'noteName' 'noteAttach'
+nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach' 'note'
+| 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName'
+|'noteAttach'
 
 // kind of channel
 getKind = fun ch
@@ -174,9 +174,8 @@ setUnlessNullish = fun elm attrName val
     elm
 
 // finish mark: set attributes/properties and call the callback
-finishMark = fun elm mk channels i subtype
-    elm,__tp__ = # type mk,type attach subtype
-    if (subtype != 'subplot')
+finishMark = fun elm mk channels i isSubplot
+    if (isSubplot !)
         elm
         | attr 'fill'           (channels ~fill i)
         | attr 'fill-opacity'   (channels ~fillOpacity i)
@@ -308,14 +307,14 @@ shapeDetails = #
 | plus             (# name 'Cross'    xMult 1.331  yMult 1.331)
 | times            (# name 'Cross'    xMult 1.254  yMult 1.254 rotate 45)
 
-// point symbol - returns a <path>
+// point symbol: modifies ops,path or creates new path, returns the path
 pointSymbol = fun ops
-    shape area x y #= ops
+    path shape area x y #= ops
     name rotate #= shapeDetails;shape
     tform = + 'translate('x' 'y')'
     if rotate
         tform += + ' rotate('rotate')'
-    $path
+    path ?? ($path)
     | attr 'd'
         d3 ~symbol (d3 : (+ 'symbol'name)) area call
     | attr 'transform' tform
@@ -826,7 +825,7 @@ tp :: 'plot' = fun target
                                             pointElm = \pointSymbol
                                                 # shape
                                                     channels,shape,length ? 'circle' (channels ~shape)
-                                                | size pointSize
+                                                | area pointSize
                                                 | x (pointSize sqrt / 2)
                                                 | y contentHeight
 
@@ -1432,8 +1431,9 @@ tp :: 'plot' = fun target
             xOffset yOffset size #= channels
             nObs = markObs ~get mk
             presentInds = markPresentInds ~get mk
+            schemes = markSchemes ~get mk
 
-            // x, xx, y, yy getters   
+            // x, xx, y, yy getters
             x =  fun i
                 channels ~x  i \xScale + leftSpace + (\xOffset i)
             xx = fun i
@@ -1442,6 +1442,36 @@ tp :: 'plot' = fun target
                 channels ~y  i \yScale + topSpace + paneHeight - (\yOffset i)
             yy = fun i
                 channels ~yy i \yScale + topSpace + paneHeight - (\yOffset i)
+
+            // function to create basic __tp__ object 
+            basic__tp__ =
+                xTransform = fun val
+                    if (val isNumber ! && dataMaps,x,size) 
+                        val = dataMaps,x ~get val
+                    val \xScale + leftSpace + this,xOffset
+                yTransform = fun val
+                    if (val isNumber ! && dataMaps,y,size) 
+                        val = dataMaps,y ~get val
+                    val \yScale + topSpace + paneHeight - this,yOffset
+                colorTransform = fun val fillOrStroke
+                    dm = dataMaps;fillOrStroke ~get mk
+                    if (val isNumber ! && (dm ?: 'size'))
+                        val = dm ~get val
+                    info = schemes;fillOrStroke
+                    if (info !)
+                        val
+                    | (info,scheme isArray)
+                        info,scheme;val
+                    | else
+                        mn = info : 'min'
+                        mx = info : 'max'
+                        val - mn / (mx - mn) \info,scheme
+                fun i
+                    # x (\x i)
+                    | y (\y i)
+                    | xOffset (\xOffset i)
+                    | yOffset (\yOffset i)
+                    | attach xTransform yTransform colorTransform type
 
             // text element
             textElm = fun i ti xi yi defaultCenter
@@ -1494,11 +1524,24 @@ tp :: 'plot' = fun target
                     presentInds each i
                         xi = \x i
                         yi = \y i
+                        si = channels ~shape i
+                        ai = channels ~area i \areaScale
                         elm = \pointSymbol
-                            # shape (channels ~shape i)
-                            | area (channels ~area i \areaScale)
+                            # shape si
+                            | area ai
                             | x xi
                             | y yi
+                        if mk,update
+                            __tp__ = \basic__tp__ i
+                            __tp__,area = ai
+                            __tp__,areaTransform = areaScale
+                            __tp__,shape = si
+                            __tp__,shapeTransform = fun val
+                                dm = dataMaps,shape ~get mk
+                                if (val isNumber ! && (dm ?: 'size'))
+                                    val = dm ~get val
+                                schemes,shape,scheme;val
+                            elm,__tp__ = __tp__
                         gMarks insert elm
                         | \finishMark mk channels i
                         \addNote i xi yi
@@ -1630,7 +1673,7 @@ tp :: 'plot' = fun target
                     gMarks insert ($path)
                     | attr 'd' (\arcObj)
                     | attr 'transform' (+ 'translate('xi' 'yi')')
-                    | \finishMark mk channels i (channels,pie ? 'pie')
+                    | \finishMark mk channels i
                     cxi cyi @= arcObj ~centroid
                     \addNote i (xi + cxi) (yi + cyi)
 
@@ -1876,7 +1919,7 @@ tp,update = fun elmts pairs
     if (elmts,length == 0)
         + 'must pass at least one element to update' \Error throw
     if (elmts some [a ~hasOwnProperty '__tp__' !])
-        + 'only mark elements can be updated' \Error throw
+        + 'elements must be updateable mark elements' \Error throw
     type subtype #= elmts,0,__tp__
     if (elmts some [a,__tp__,type != type || (a,__tp__,subtype != subtype)]) 
         + 'updated elements must all have the same type (and subtype)'
@@ -1891,19 +1934,49 @@ tp,update = fun elmts pairs
             + ch' channel cannot be updated' \Error throw
         if (type != 'text' && (defChannels ~get ch : '_kind' == 'text'))
             + 'can only update 'ch' channel of text marks' \Error throw
+    getVal = fun elm ch i
+        val = pairs;ch
+        val isFunction ? (val ~'call' elm elm,__data__ i) val
+    xUpdate = fun elm i
+        if (channels ~has 'x')
+            elm,__tp__,x = \getVal elm 'x' i \elm,__tp__,xTransform
+        elm
+    yUpdate = fun elm i
+        if (channels ~has 'y')
+            elm,__tp__,y = \getVal elm 'y' i \elm,__tp__,yTransform
+        elm
+    done = fun rest
+        rest each ch
+            channels ~'delete' ch
             
     // channels that map directly to an attribute
     channels each ch
         _attr = defChannels ~get ch : '_attr'
         if _attr
             elmts attr (_attr == true ? (ch \camelToKebab) _attr) pairs;ch
-            channels ~'delete' ch
+            ch \done
+
+    // fill and stroke
+    @ 'fill' 'stroke' each ch
+        if (channels ~has ch)
+            elmts each elm i
+                elm attr ch (\getVal elm ch i \elm,__tp__,colorTransform ch)
+    'fill' 'stroke' \done
 
     // point
     if (type == 'point')
+        elmts each elm i
+            __tp__ #= elm
+            elm \xUpdate i \yUpdate i
+            if (channels ~has 'shape')
+                __tp__,shape = \getVal elm 'shape' i \__tp__,shapeTransform
+            if (channels ~has 'area')
+                __tp__,area = \getVal elm 'area' i \__tp__,areaTransform
+            __tp__ at (@ 'x' 'y' 'shape' 'area') chg 'path' elm \pointSymbol
+        'shape' 'area' \done
 
     // text
-    | (type == 'text')
+    // | (type == 'text')
         // INCLUDE TEXT AND ROTATE CHANNELS
         // // text channel
         // if (channels ~has 'text')
@@ -1914,8 +1987,10 @@ tp,update = fun elmts pairs
         //     [+ 'rotate('pairs,rotate','','yi')')
         // channels ~'delete' 'rotate'
 
-   
-   
+    // !!! other mark types here!!!!!!    
+        
+    'x' 'y' \done
+
    // !!!!! WHEN DONE, CHECK channels IS EMPTY - THROW IF NOT
 
 
