@@ -109,7 +109,7 @@ defChannels = ##
 | 'attach'      (# _kind 'common' def null)
 
 // text (used by note for mark types other than text)
-| fontSize   (# _kind 'text' _attr true                def null)
+| fontSize   (# _kind 'text'                           def null)
 | fontFamily (# _kind 'text' _attr true                def null)
 | fontStyle  (# _kind 'text' _attr true                def null)
 | fontWeight (# _kind 'text' _attr true                def null) 

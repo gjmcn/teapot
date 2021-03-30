@@ -1632,8 +1632,10 @@ tp :: 'plot' = fun target
             // text
             | (type == 'text')
                 presentInds each i
-                    gMarks insert 
-                        \textElm i (channels ~'text' i) (\x i) (\y i)
+                    elm = \textElm i (channels ~'text' i) (\x i) (\y i)
+                    if mk,update
+                        elm,__tp__ = \basic__tp__ i
+                    gMarks insert elm
                     | \finishMark mk channels i
 
             // arc
@@ -1943,7 +1945,7 @@ tp,update = fun elmts pairs
         'elements must be updateable mark elements' \Error throw
     type subtype #= elmts,0,__tp__
     if (elmts some [a,__tp__,type != type || (a,__tp__,subtype != subtype)]) 
-        'updated elements must all have the same type (and subtype)'
+        'elements must have the same mark type (and subtype)'
         | \Error throw
     
     // check channels
@@ -1997,16 +1999,22 @@ tp,update = fun elmts pairs
         'shape' 'area' \done
 
     // text
-    // | (type == 'text')
-        // INCLUDE TEXT AND ROTATE CHANNELS
-        // // text channel
-        // if (channels ~has 'text')
-        //     elmts text (pairs : 'text')
-        //     channels ~'delete' 'text'
-        //     if (channels ~has 'rotate')
-        // elmts attr 'transform'
-        //     [+ 'rotate('pairs,rotate','','yi')')
-        // channels ~'delete' 'rotate'
+    | (type == 'text')
+        elmts each elm i
+            __tp__ #= elm
+            elm \xUpdate i \yUpdate i
+            if (channels ~has 'x')
+                elm attr 'x' __tp__,x
+            if (channels ~has 'y')
+                elm attr 'y' __tp__,y
+            if (channels ~has 'fontSize')
+                elm attr 'font-size' (\getVal elm 'fontSize' i + 'px')
+            if (channels ~has 'text')
+                elm text (\getVal elm 'text' i)
+            if (channels ~has 'rotate')
+                elm attr 'transform'
+                    + 'rotate('(\getVal elm 'rotate' i)','__tp__,x','__tp__,y')'
+        'fontSize' 'text' 'rotate' \done
 
     // !!! other mark types here!!!!!!    
         
