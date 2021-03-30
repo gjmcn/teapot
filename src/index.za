@@ -1466,12 +1466,15 @@ tp :: 'plot' = fun target
                         mn = info : 'min'
                         mx = info : 'max'
                         val - mn / (mx - mn) \info,scheme
-                fun i
-                    # x (\x i)
-                    | y (\y i)
-                    | xOffset (\xOffset i)
-                    | yOffset (\yOffset i)
-                    | attach xTransform yTransform colorTransform type
+                fun elm i
+                    __tp__ =
+                        # x (\x i)
+                        | y (\y i)
+                        | xOffset (\xOffset i)
+                        | yOffset (\yOffset i)
+                        | attach xTransform yTransform colorTransform type
+                    elm attach __tp__
+                    __tp__
 
             // text element
             textElm = fun i ti xi yi defaultCenter
@@ -1532,7 +1535,7 @@ tp :: 'plot' = fun target
                             | x xi
                             | y yi
                         if mk,update
-                            __tp__ = \basic__tp__ i
+                            __tp__ = \basic__tp__ elm i
                             __tp__,area = ai
                             __tp__,areaTransform = areaScale
                             __tp__,shape = si
@@ -1541,7 +1544,6 @@ tp :: 'plot' = fun target
                                 if (val isNumber ! && (dm ?: 'size'))
                                     val = dm ~get val
                                 schemes,shape,scheme;val
-                            elm,__tp__ = __tp__
                         gMarks insert elm
                         | \finishMark mk channels i
                         \addNote i xi yi
@@ -1551,11 +1553,14 @@ tp :: 'plot' = fun target
                 presentInds each i
                     xxi = \xx i
                     yyi = \yy i
-                    gMarks insert ($line)
+                    elm = $line
                     | attr 'x1' (\x i)
                     | attr 'y1' (\y i)
                     | attr 'x2' xxi
                     | attr 'y2' yyi
+                    if mk,update
+                        \basic__tp__ elm i
+                    gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
 
@@ -1634,7 +1639,7 @@ tp :: 'plot' = fun target
                 presentInds each i
                     elm = \textElm i (channels ~'text' i) (\x i) (\y i)
                     if mk,update
-                        elm,__tp__ = \basic__tp__ i
+                        \basic__tp__ elm i
                     gMarks insert elm
                     | \finishMark mk channels i
 
@@ -2015,6 +2020,22 @@ tp,update = fun elmts pairs
                 elm attr 'transform'
                     + 'rotate('(\getVal elm 'rotate' i)','__tp__,x','__tp__,y')'
         'fontSize' 'text' 'rotate' \done
+
+    // segment
+    | (type == 'segment')
+        elmts each elm i
+            __tp__ #= elm
+            elm \xUpdate i \yUpdate i
+            if (channels ~has 'x')
+                elm attr 'x1' __tp__,x
+            if (channels ~has 'y')
+                elm attr 'y1' __tp__,y
+            if (channels ~has 'xx')
+                elm attr 'x2' (\getVal elm 'xx' i \__tp__,xTransform)
+            if (channels ~has 'yy')
+                elm attr 'y2' (\getVal elm 'yy' i \__tp__,yTransform)
+        'xx' 'yy' \done
+
 
     // !!! other mark types here!!!!!!    
         
