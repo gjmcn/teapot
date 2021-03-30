@@ -1611,11 +1611,15 @@ tp :: 'plot' = fun target
                     xxi = \xx i
                     yyi = \yy i
                     d = d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
-                        #
-                        | source (@ (\x  i)  (\y i))
+                        # source (@ (\x  i)  (\y i))
                         | target (@ xxi yyi)
-                    gMarks insert ($path)
+                    elm = $path
                     | attr 'd' d
+                    if mk,update
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,xx = xxi
+                        __tp__,yy = yyi
+                    gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
 
@@ -1965,14 +1969,13 @@ tp,update = fun elmts pairs
     getVal = fun elm ch i
         val = pairs;ch
         val isFunction ? (val ~'call' elm elm,__data__ i) val
-    xUpdate = fun elm i
-        if (channels ~has 'x')
-            elm,__tp__,x = \getVal elm 'x' i \elm,__tp__,xTransform
-        elm
-    yUpdate = fun elm i
-        if (channels ~has 'y')
-            elm,__tp__,y = \getVal elm 'y' i \elm,__tp__,yTransform
-        elm
+    xyUpdate = fun elm i rest
+        rest each ch
+            if (channels ~has ch)
+                elm,__tp__;ch = \getVal elm ch i \(elm,__tp__ : (+ ch,0'Transform'))
+    setFrom__tp__ = fun elm attrName ch
+        if (channels ~has ch)
+            elm attr attrName elm,__tp__;ch
     done = fun rest
         rest each ch
             channels ~'delete' ch
@@ -1995,7 +1998,7 @@ tp,update = fun elmts pairs
     if (type == 'point')
         elmts each elm i
             __tp__ #= elm
-            elm \xUpdate i \yUpdate i
+            elm \xyUpdate i 'x' 'y'
             if (channels ~has 'shape')
                 __tp__,shape = \getVal elm 'shape' i \__tp__,shapeTransform
             if (channels ~has 'area')
@@ -2007,11 +2010,9 @@ tp,update = fun elmts pairs
     | (type == 'text')
         elmts each elm i
             __tp__ #= elm
-            elm \xUpdate i \yUpdate i
-            if (channels ~has 'x')
-                elm attr 'x' __tp__,x
-            if (channels ~has 'y')
-                elm attr 'y' __tp__,y
+            elm \xyUpdate i 'x' 'y'
+            elm \setFrom__tp__ 'x' 'x'
+            elm \setFrom__tp__ 'y' 'y'
             if (channels ~has 'fontSize')
                 elm attr 'font-size' (\getVal elm 'fontSize' i + 'px')
             if (channels ~has 'text')
@@ -2025,17 +2026,26 @@ tp,update = fun elmts pairs
     | (type == 'segment')
         elmts each elm i
             __tp__ #= elm
-            elm \xUpdate i \yUpdate i
-            if (channels ~has 'x')
-                elm attr 'x1' __tp__,x
-            if (channels ~has 'y')
-                elm attr 'y1' __tp__,y
+            elm \xyUpdate i 'x' 'y'
+            elm \setFrom__tp__ 'x1' 'x'
+            elm \setFrom__tp__ 'y1' 'y'
             if (channels ~has 'xx')
                 elm attr 'x2' (\getVal elm 'xx' i \__tp__,xTransform)
             if (channels ~has 'yy')
                 elm attr 'y2' (\getVal elm 'yy' i \__tp__,yTransform)
         'xx' 'yy' \done
 
+    // hLink and vLink
+    | (type == 'hLink' || (type == 'vLink'))
+        elmts each elm i
+            __tp__ #= elm
+            elm \xyUpdate i 'x' 'y' 'xx' 'yy'
+            d = d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
+                # source (@ __tp__,x  __tp__,y)
+                | target (@ __tp__,xx __tp__,yy)
+            elm attr 'd' d
+        'xx' 'yy' \done
+        
 
     // !!! other mark types here!!!!!!    
         
