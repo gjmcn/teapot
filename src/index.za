@@ -29,7 +29,7 @@ channelNames = new Set (defChannels ~keys)
 // channels that cannot be updated
 nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach' 'note'
 | 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName'
-|'noteAttach'
+| 'noteAttach'
 
 // kind of channel
 getKind = fun ch
@@ -1906,6 +1906,27 @@ tp,stack = fun data ops
         | 'upper' (row map pair (pair,1))
     # attach groupNames levels
 
+// lookup
+tp,lookup = fun data key returnMap
+    if returnMap
+        mp = ##
+        if (key isFunction)
+            data each d i
+                mp ~set (\key d i data) d
+        | else
+            data each d
+                mp ~set d;key d
+        mp    
+    | else
+        obj = #
+        if (key isFunction)
+            data each d i
+                obj : (\key d i data) = d
+        | else
+            data each d
+                obj : d;key = d
+        obj
+
 // update
 tp,update = fun elmts pairs
     
@@ -1917,12 +1938,12 @@ tp,update = fun elmts pairs
     | (elmts isArray !)
         elmts = elmts array
     if (elmts,length == 0)
-        + 'must pass at least one element to update' \Error throw
+        'must pass at least one element to update' \Error throw
     if (elmts some [a ~hasOwnProperty '__tp__' !])
-        + 'elements must be updateable mark elements' \Error throw
+        'elements must be updateable mark elements' \Error throw
     type subtype #= elmts,0,__tp__
     if (elmts some [a,__tp__,type != type || (a,__tp__,subtype != subtype)]) 
-        + 'updated elements must all have the same type (and subtype)'
+        'updated elements must all have the same type (and subtype)'
         | \Error throw
     
     // check channels
