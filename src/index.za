@@ -1719,8 +1719,18 @@ tp :: 'plot' = fun target
                         yyi = \yy i
                         xxi = xi + xShift
                         xi  = xi - xShift
-                    gMarks insert ($polygon)
+                    elm = $polygon
                     | attr 'points' (+ xi','yi' 'xxi','yi' 'xxi','yyi' 'xi','yyi)
+                    if mk,update
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,size = si
+                        if (type == 'hBar')
+                            __tp__,xx = xxi
+                            __tp__,yShift = [this,size / yRange * paneHeight / 2]
+                        | else
+                            __tp__,yy = yyi
+                            __tp__,xShift = [this,size / xRange * paneWidth / 2]
+                    gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i nxi nyi
 
@@ -2070,6 +2080,25 @@ tp,update = fun elmts pairs
                 __tp__,clockwise = \getVal elm 'clockwise' i boolean number
             elm attr 'd' (\dEdge __tp__)
         'xx' 'yy' 'size' 'clockwise' \done
+
+    // bars
+    | (type == 'hBar' || (type == 'vBar'))
+        elmts each elm i
+            __tp__ #= elm
+            elm \xyUpdate i 'x' 'y' (type == 'hBar' ? 'xx' 'yy')
+            if (channels ~has 'size')
+                __tp__,size = \getVal elm 'size' i
+            x y #= __tp__
+            if (type == 'hBar')
+                xx #= __tp__
+                yy = y - (__tp__ ~yShift)
+                y  = y + (__tp__ ~yShift)
+            | else
+                yy #= __tp__
+                xx = x + (__tp__ ~xShift)
+                x  = x - (__tp__ ~xShift)
+            elm attr 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
+        'xx' 'yy' 'size' \done
 
     // !!! other mark types here!!!!!!    
         
