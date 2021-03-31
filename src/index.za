@@ -319,6 +319,12 @@ pointSymbol = fun ops
         d3 ~symbol (d3 : (+ 'symbol'name)) area call
     | attr 'transform' tform
 
+// d attribute for edge mark
+dEdge = fun values
+    x xx y yy size clockwise #= values
+    r = (x - xx ^ 2) + (y - yy ^ 2) sqrt / 2 / (size ^ (1 / 3))
+    + 'M 'x','y' A 'r' 'r' 0 0 'clockwise' 'xx','yy
+
 // polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
 polygonCentroid = fun p
     i = - 1
@@ -1630,11 +1636,18 @@ tp :: 'plot' = fun target
                     yi  = \y i
                     xxi = \xx i
                     yyi = \yy i
-                    ri  = (xi - xxi ^ 2) + (yi - yyi ^ 2) sqrt / 2 /
-                        \size i ^ (1 / 3)
+                    si  = \size i
                     cwi = channels ~clockwise i boolean number
-                    gMarks insert ($path)
-                    | attr 'd' (+ 'M 'xi','yi' A 'ri' 'ri' 0 0 'cwi' 'xxi','yyi)
+                    elm = $path
+                    | attr 'd'
+                        # x xi y yi xx xxi yy yyi size si clockwise cwi \dEdge
+                    if mk,update
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,xx = xxi
+                        __tp__,yy = yyi
+                        __tp__,size = si
+                        __tp__,clockwise = cwi
+                    gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
 
@@ -2045,7 +2058,18 @@ tp,update = fun elmts pairs
                 | target (@ __tp__,xx __tp__,yy)
             elm attr 'd' d
         'xx' 'yy' \done
-        
+
+    // edge
+    | (type == 'edge')
+        elmts each elm i
+            __tp__ #= elm
+            elm \xyUpdate i 'x' 'y' 'xx' 'yy'
+            if (channels ~has 'size')
+                __tp__,size = \getVal elm 'size' i
+            if (channels ~has 'clockwise')
+                __tp__,clockwise = \getVal elm 'clockwise' i boolean number
+            elm attr 'd' (\dEdge __tp__)
+        'xx' 'yy' 'size' 'clockwise' \done
 
     // !!! other mark types here!!!!!!    
         
