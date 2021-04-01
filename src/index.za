@@ -2091,14 +2091,16 @@ tp,update = fun elmts pairs
             x y #= __tp__
             if (type == 'hBar')
                 xx #= __tp__
-                yy = y - (__tp__ ~yShift)
-                y  = y + (__tp__ ~yShift)
+                yShift = __tp__ ~yShift
+                yy = y - yShift
+                y  = y + yShift
             | else
                 yy #= __tp__
-                xx = x + (__tp__ ~xShift)
-                x  = x - (__tp__ ~xShift)
+                xShift = __tp__ ~xShift
+                xx = x + xShift
+                x  = x - xShift
             elm attr 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
-        'xx' 'yy' 'size' \done
+        (type == 'hBar' ? 'xx' 'yy') 'size' \done
 
     // !!! other mark types here!!!!!!    
         
