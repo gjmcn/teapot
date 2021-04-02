@@ -92,7 +92,11 @@ defOptions = #
 
 defChannels = ##
 
-// common
+// common (attach must be first channel since attached data used by other
+// channels when use an initial state)
+| 'attach'      (# _kind 'common' def null)
+| 'class'       (# _kind 'common' def null)
+| name          (# _kind 'common' def null)
 | x             (# _kind 'common' def 0)
 | y             (# _kind 'common' def 0)
 | xOffset       (# _kind 'common' def 0)
@@ -104,9 +108,6 @@ defChannels = ##
 | strokeWidth   (# _kind 'common' _attr true               def 0 segment 1.5 hLink 1.5 vLink 1.5 edge 1.5 line 1.5)
 | strokeCap     (# _kind 'common' _attr 'stroke-linecap'   def null)
 | strokeDash    (# _kind 'common' _attr 'stroke-dasharray' def null)
-| 'class'       (# _kind 'common' def null)
-| name          (# _kind 'common' def null)
-| 'attach'      (# _kind 'common' def null)
 
 // text (used by note for mark types other than text)
 | fontSize   (# _kind 'text'                           def null)

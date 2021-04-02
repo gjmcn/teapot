@@ -193,8 +193,6 @@ finishMark = fun elm mk channels i isSubplot
     d = channels ~'attach' i
     if (d isNullish !)
         elm,__data__ = d
-    if (mk,state isNullish ! && mk,update)
-        tp ~update elm mk,state
     convenienceEvents each eventType
         if (mk;eventType isNullish !)
             elm ~addEventListener eventType mk;eventType
@@ -413,14 +411,37 @@ tp :: 'plot' = fun target
         ctx
 
     // get mark-channel data
-    channelData = fun mk ch
+    channelData = fun mk ch attachedData markUpdate
         data = mk;ch
+
+        // nullish constant
         if (data isNullish)
             # isConst true data (\getChannelDefault mk ch) 
+        
+        // data array
         | (data isArray)
             data array \checkData mk ch
-        | ((typeof data == 'string' && (data,0 == '~')) ||
-        | (typeof data == 'function'))
+        
+        // update accessor
+        | (data isFunction && (data,length > 2))
+            if (nonUpdateChannelNames ~has ch)
+                + ch' channel is not updateable' \Error throw
+            if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
+                + ch' channel is not updateable unless used with text marks'
+                | \Error throw
+            markUpdate ~set ch data
+            if (mk,state isNullish)
+                # isConst true data (\getChannelDefault mk ch)
+            | else
+                if (attachedData isArray !)
+                    'attach channel must be non-constant when state option is used'
+                    | \Error throw
+                attachedData map d i
+                    \data d i mk,state ?? (\getChannelDefault mk ch)
+                | \checkData mk ch
+
+        // ~string or accessor
+        | ((data isString && (data,0 == '~')) || (data isFunction))
             ds = mk,data ?? _dataset
             if (ds !)
                 \markChannelError mk,type ch
@@ -430,6 +451,8 @@ tp :: 'plot' = fun target
             | else 
                 ds pick (data ~slice 1)
             | \checkData mk ch
+        
+        // constant
         | else
             if (\isInfOrNaN data)
                 \markChannelError mk,type ch nonFiniteMsg
@@ -471,12 +494,15 @@ tp :: 'plot' = fun target
     markSchemes = ##
     markAreaInfo = ##
     markPresentInds = ##
+    markUpdates = ##
+
     _marks each mk
 
         type #= mk
         channels = #
         nObs = null
         schemeInfo = #
+        markUpdate = ##
         missingAll = @@
         channelsList = @@
         noteUsed = mk,note isNullish !
@@ -500,7 +526,8 @@ tp :: 'plot' = fun target
                 channelsList ~add ch
 
                 // data and indices of missing values
-                data missingInds isConst #= \channelData mk ch
+                data missingInds isConst #=
+                    \channelData mk ch (channels : 'attach') markUpdate
 
                 // single-mark types can only have non-constant x, xx, y, yy 
                 if (singleMarkNames ~has type && (xyChannelNames ~has ch !) && (isConst !))
@@ -714,7 +741,7 @@ tp :: 'plot' = fun target
         markObs ~set mk nObs
         markSchemes ~set mk schemeInfo
         markPresentInds ~set mk presentInds
-
+        markUpdates ~set mk markUpdate
 
     // ========== legend ==========
 
@@ -1143,7 +1170,7 @@ tp :: 'plot' = fun target
         leftSpace   ?= \getSideSpace 'left'
 
 
-        // ========== width, height, paneWidth, paneHeight, xScale, yScale ==========
+        // ========== width, height, paneWidth, paneHeight, scales, transforms ==========
 
         plotSpace = \fourOption _options 'plotSpace'
         paneHeight = 'paneHeight' \op 
@@ -1170,6 +1197,14 @@ tp :: 'plot' = fun target
                 width += legendWidth + legendGap
         xScale = [a - xMin / xRange * paneWidth]
         yScale = [a - yMin / yRange * paneHeight -]
+        xTransform = fun val
+            if (val isNumber ! && dataMaps,x,size) 
+                val = dataMaps,x ~get val
+            val \xScale + leftSpace + this,xOffset
+        yTransform = fun val
+            if (val isNumber ! && dataMaps,y,size) 
+                val = dataMaps,y ~get val
+            val \yScale + topSpace + paneHeight - this,yOffset
 
 
         // ========== container svg/g, pane and grid ==========
@@ -1440,6 +1475,7 @@ tp :: 'plot' = fun target
             nObs = markObs ~get mk
             presentInds = markPresentInds ~get mk
             schemes = markSchemes ~get mk
+            markUpdate = markUpdates ~get mk
 
             // x, xx, y, yy getters
             x =  fun i
@@ -1451,36 +1487,29 @@ tp :: 'plot' = fun target
             yy = fun i
                 channels ~yy i \yScale + topSpace + paneHeight - (\yOffset i)
 
-            // function to create basic __tp__ object 
+            // function to create basic __tp__ object
             basic__tp__ =
-                xTransform = fun val
-                    if (val isNumber ! && dataMaps,x,size) 
-                        val = dataMaps,x ~get val
-                    val \xScale + leftSpace + this,xOffset
-                yTransform = fun val
-                    if (val isNumber ! && dataMaps,y,size) 
-                        val = dataMaps,y ~get val
-                    val \yScale + topSpace + paneHeight - this,yOffset
-                colorTransform = fun val fillOrStroke
-                    dm = dataMaps;fillOrStroke ~get mk
-                    if (val isNumber ! && (dm ?: 'size'))
-                        val = dm ~get val
-                    info = schemes;fillOrStroke
-                    if (info !)
-                        val
-                    | (info,scheme isArray)
-                        info,scheme;val
-                    | else
-                        mn = info : 'min'
-                        mx = info : 'max'
-                        val - mn / (mx - mn) \info,scheme
-                fun elm i update
+                if (markUpdate ~has 'fill' || (markUpdate ~has 'stroke'))
+                    colorTransform = fun val fillOrStroke
+                        dm = dataMaps;fillOrStroke ~get mk
+                        if (val isNumber ! && (dm ?: 'size'))
+                            val = dm ~get val
+                        info = schemes;fillOrStroke
+                        if (info !)
+                            val
+                        | (info,scheme isArray)
+                            info,scheme;val
+                        | else
+                            mn = info : 'min'
+                            mx = info : 'max'
+                            val - mn / (mx - mn) \info,scheme
+                fun elm i
                     __tp__ =
                         # x (\x i)
                         | y (\y i)
                         | xOffset (\xOffset i)
                         | yOffset (\yOffset i)
-                        | attach xTransform yTransform colorTransform type update
+                        | attach xTransform yTransform colorTransform type markUpdate
                     elm attach __tp__
                     __tp__
 
@@ -1542,8 +1571,8 @@ tp :: 'plot' = fun target
                             | area ai
                             | x xi
                             | y yi
-                        if mk,update
-                            __tp__ = \basic__tp__ elm i mk,update
+                        if markUpdate,size
+                            __tp__ = \basic__tp__ elm i
                             __tp__,area = ai
                             __tp__,areaTransform = areaScale
                             __tp__,shape = si
@@ -1566,8 +1595,8 @@ tp :: 'plot' = fun target
                     | attr 'y1' (\y i)
                     | attr 'x2' xxi
                     | attr 'y2' yyi
-                    if mk,update
-                        \basic__tp__ elm i mk,update
+                    if markUpdate,size
+                        \basic__tp__ elm i
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
@@ -1623,8 +1652,8 @@ tp :: 'plot' = fun target
                         | target (@ xxi yyi)
                     elm = $path
                     | attr 'd' d
-                    if mk,update
-                        __tp__ = \basic__tp__ elm i mk,update
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
                         __tp__,xx = xxi
                         __tp__,yy = yyi
                     gMarks insert elm
@@ -1643,8 +1672,8 @@ tp :: 'plot' = fun target
                     elm = $path
                     | attr 'd'
                         # x xi y yi xx xxi yy yyi size si clockwise cwi \dEdge
-                    if mk,update
-                        __tp__ = \basic__tp__ elm i mk,update
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
                         __tp__,xx = xxi
                         __tp__,yy = yyi
                         __tp__,size = si
@@ -1657,8 +1686,8 @@ tp :: 'plot' = fun target
             | (type == 'text')
                 presentInds each i
                     elm = \textElm i (channels ~'text' i) (\x i) (\y i)
-                    if mk,update
-                        \basic__tp__ elm i mk,update
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
                     gMarks insert elm
                     | \finishMark mk channels i
 
@@ -1723,8 +1752,8 @@ tp :: 'plot' = fun target
                         xi  = xi - xShift
                     elm = $polygon
                     | attr 'points' (+ xi','yi' 'xxi','yi' 'xxi','yyi' 'xi','yyi)
-                    if mk,update
-                        __tp__ = \basic__tp__ elm i mk,update
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
                         __tp__,size = si
                         if (type == 'hBar')
                             __tp__,xx = xxi
@@ -1969,24 +1998,16 @@ tp,lookup = fun data key returnMap
 // update element
 updateElement = fun elm i state
 
-    // check elment updateable
-    if (elm ~hasOwnProperty '__tp__' !)
-        'elements must be updateable mark elements' \Error throw
-
     __tp__ #= elm
-    type update #= __tp__
+    type #= __tp__
     
     // channels
     channels = ##
-    Object ~keys update each ch
-        if (channelNames ~has ch && 
-        | (nonUpdateChannelNames ~has ch !) &&
-        | (defChannels ~get ch : '_kind' != 'text' || (type == 'text')))
-            if (update;ch isFunction !)
-                + 'update channel 'ch', function expected' \Error throw
-            val = update;ch ~'call' elm elm,__data__ i state
-            if (val isNullish !)
-                channels ~set ch val
+    __tp__,markUpdate each chFunc
+        ch func @= chFunc
+        val = \func elm,__data__ i state
+        if (val isNullish !)
+            channels ~set ch val
     channelsHasAnyOf = fun rest
         rest some [channels ~has a]
 
@@ -1995,28 +2016,21 @@ updateElement = fun elm i state
         rest each ch
             if (channels ~has ch)
                 __tp__;ch = channels ~get ch \(__tp__ : (+ ch,0'Transform'))
-
     setFrom__tp__ = fun attrName ch
         if (channels ~has ch)
             elm ~setAttribute attrName __tp__;ch
-    done = fun rest
-        rest each ch
-            channels ~'delete' ch
             
     // channels that map directly to an attribute
     channels ~keys each ch
         _attr = defChannels ~get ch : '_attr'
         if _attr
             elm ~setAttribute (_attr == true ? (ch \camelToKebab) _attr) (channels ~get ch)
-            ch \done
 
     // fill and stroke
     if (channels ~has 'fill')
         elm ~setAttribute 'fill' (channels ~get 'fill' \__tp__,colorTransform 'fill')
-        'fill' \done
     if (channels ~has 'stroke')
         elm ~setAttribute 'stroke' (channels ~get 'stroke' \__tp__,colorTransform 'stroke')
-        'stroke' \done
 
     // point
     if (type == 'point')
@@ -2027,7 +2041,6 @@ updateElement = fun elm i state
             if (channels ~has 'area')
                 __tp__,area = channels ~get 'area' \__tp__,areaTransform
             __tp__ at (@ 'x' 'y' 'shape' 'area') chg 'path' elm \pointSymbol
-            'shape' 'area' \done
 
     // text
     | (type == 'text')
@@ -2041,7 +2054,6 @@ updateElement = fun elm i state
         if (channels ~has 'rotate')
             elm ~setAttribute 'transform'
                 + 'rotate('(channels ~get 'rotate')','__tp__,x','__tp__,y')'
-        'fontSize' 'text' 'rotate' \done
 
     // segment
     | (type == 'segment')
@@ -2052,7 +2064,6 @@ updateElement = fun elm i state
             elm ~setAttribute 'x2' (channels ~get 'xx' \__tp__,xTransform)
         if (channels ~has 'yy')
             elm ~setAttribute 'y2' (channels ~get 'yy' \__tp__,yTransform)
-        'xx' 'yy' \done
 
     // hLink and vLink
     | (type == 'hLink' || (type == 'vLink'))
@@ -2062,7 +2073,6 @@ updateElement = fun elm i state
                 d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
                     # source (@ __tp__,x  __tp__,y)
                     | target (@ __tp__,xx __tp__,yy)
-            'xx' 'yy' \done
 
     // edge
     | (type == 'edge')
@@ -2073,7 +2083,6 @@ updateElement = fun elm i state
             if (channels ~has 'clockwise')
                 __tp__,clockwise = channels ~get 'clockwise' boolean number
             elm ~setAttribute 'd' (\dEdge __tp__)
-            'xx' 'yy' 'size' 'clockwise' \done
 
     // bars
     | (type == 'hBar' || (type == 'vBar'))
@@ -2094,25 +2103,22 @@ updateElement = fun elm i state
                 xx = x + xShift
                 x  = x - xShift
             elm ~setAttribute 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
-            other 'size' \done
 
     // !!! other mark types here!!!!!!    
-        
-    'x' 'y' \done
-    
+            
    // !!!!! WHEN DONE, CHECK channels IS EMPTY - THROW IF NOT
 
-// update methods
+// update method
 tp,update = fun elmts state
     if (elmts isString)
         elmts = selectAll elmts
     | (elmts ?: Symbol,iterator !)  // assume is a single element
         elmts = @ elmts
-    | (elmts isArray !)
-        elmts = elmts array
     elmts each elm i
-        \updateElement elm i state
+        if (elm,__tp__ ?: 'markUpdate' ?: 'size')
+            \updateElement elm i state
     undefined
+
 
 // ========== color schemes ==========
 
