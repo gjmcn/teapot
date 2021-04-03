@@ -433,12 +433,13 @@ tp :: 'plot' = fun target
             if (mk,state isNullish)
                 # isConst true data (\getChannelDefault mk ch)
             | else
-                if (attachedData isArray !)
-                    'attach channel must be non-constant when state option is used'
-                    | \Error throw
-                attachedData map d i
-                    \data d i mk,state ?? (\getChannelDefault mk ch)
-                | \checkData mk ch
+                if (attachedData isArray)
+                    attachedData map d i
+                        \data d i mk,state ?? (\getChannelDefault mk ch)
+                    | \checkData mk ch
+                | else
+                    # isConst true
+                    | data (\data attachedData 0 mk,state ?? (\getChannelDefault mk ch))
 
         // ~string or accessor
         | ((data isString && (data,0 == '~')) || (data isFunction))
@@ -2106,14 +2107,19 @@ updateElement = fun elm i state
 
     // !!! other mark types here!!!!!!    
             
-   // !!!!! WHEN DONE, CHECK channels IS EMPTY - THROW IF NOT
-
 // update method
-tp,update = fun elmts state
-    if (elmts isString)
-        elmts = selectAll elmts
-    | (elmts ?: Symbol,iterator !)  // assume is a single element
-        elmts = @ elmts
+tp,update = fun rest
+    if (rest,length == 2)
+        elmts state @= rest
+        if (elmts isString)
+            elmts = selectAll elmts
+        | (elmts ?: Symbol,iterator !)  // assume is a single element
+            elmts = @ elmts
+    | (rest,length == 3)
+        elmts = rest,0 selectAll rest,1
+        state = rest,2
+    | else
+        '2 or 3 arguments expected' \Error throw
     elmts each elm i
         if (elm,__tp__ ?: 'markUpdate' ?: 'size')
             \updateElement elm i state
