@@ -65,6 +65,30 @@ isInfOrNaN = fun val
 nonFiniteMsg = 'non-finite data value (NaN, Infinity or -Infinity)'
 allMissingMsg = 'every datum has a missing value'
 
+// is array of objects/arrays?
+isArrayOfObjects = fun d
+    d isArray && (d every [typeof a == 'object' && (a != null)])
+
+// assert array of objects/arrays
+assertArrayOfObjects = fun d
+    if (d \isArrayOfObjects !) 
+        'array of objects/arrays expected' \Error throw
+
+// trivial dataset: [{index: 0}, {index: 1}, ...]
+indexDataset = fun n
+    empties n each v i a
+        a;i = # index i
+
+// get dataset
+getDataset = fun ds
+    if (ds isInteger && (ds > 0))
+        \indexDataset ds
+    | (ds \isArrayOfObjects)
+        ds
+    | else
+        'dataset must be an array of objects/arrays or a positive integer'
+        | \Error throw 
+
 // captitalize first character of string
 capitalize = fun s
     s,0 toUpperCase + (s ~slice 1)
@@ -93,11 +117,6 @@ checkShapeScheme = fun scheme mk
     | (scheme some [defShapeScheme ~includes a !]))
         + 'mark-'mk,type', invalid shape name' \Error throw
     scheme
-
-// check is an array of objects/arrays
-checkArrayOfObjects = fun d
-    if (d isArray ! || (d some [typeof a != 'object' || (a == null)])) 
-        'array of objects/arrays expected' \Error throw
 
 // check data array and get indices of missing values
 checkData = fun arr mk ch
@@ -411,7 +430,7 @@ tp :: 'plot' = fun target
         ctx
 
     // get mark-channel data
-    channelData = fun mk ch attachedData markUpdate
+    channelData = fun mk ch markUpdate
         data = mk;ch
 
         // nullish constant
@@ -422,25 +441,6 @@ tp :: 'plot' = fun target
         | (data isArray)
             data array \checkData mk ch
         
-        // update accessor
-        | (data isFunction && (data,length > 2))
-            if (nonUpdateChannelNames ~has ch)
-                + ch' channel is not updateable' \Error throw
-            if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
-                + ch' channel is not updateable unless used with text marks'
-                | \Error throw
-            markUpdate ~set ch data
-            if (mk,state isNullish)
-                # isConst true data (\getChannelDefault mk ch)
-            | else
-                if (attachedData isArray)
-                    attachedData map d i
-                        \data d i mk,state ?? (\getChannelDefault mk ch)
-                    | \checkData mk ch
-                | else
-                    # isConst true
-                    | data (\data attachedData 0 mk,state ?? (\getChannelDefault mk ch))
-
         // ~string or accessor
         | ((data isString && (data,0 == '~')) || (data isFunction))
             ds = mk,data ?? _dataset
@@ -448,7 +448,16 @@ tp :: 'plot' = fun target
                 \markChannelError mk,type ch
                     'no dataset attached to mark or plot'
             if (typeof data == 'function')
-                ds ~'map' data
+                if (data,length > 2)  // updateable channel
+                    if (nonUpdateChannelNames ~has ch)
+                        + ch' channel is not updateable' \Error throw
+                    if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
+                        + ch' channel is not updateable unless used with text marks'
+                        | \Error throw
+                    markUpdate ~set ch
+                        fun i s
+                            \data ds;i i s
+                ds map d i (\data d i mk,state)
             | else 
                 ds pick (data ~slice 1)
             | \checkData mk ch
@@ -527,8 +536,7 @@ tp :: 'plot' = fun target
                 channelsList ~add ch
 
                 // data and indices of missing values
-                data missingInds isConst #=
-                    \channelData mk ch (channels : 'attach') markUpdate
+                data missingInds isConst #= \channelData mk ch markUpdate
 
                 // single-mark types can only have non-constant x, xx, y, yy 
                 if (singleMarkNames ~has type && (xyChannelNames ~has ch !) && (isConst !))
@@ -1854,8 +1862,7 @@ tp :: 'option' = fun newOptions
 tp :: 'data' = fun d
     if this,_dataset
         'dataset already attached' \Error throw
-    \checkArrayOfObjects d
-    this,_dataset = d
+    this,_dataset = \getDataset d
     this
 
 // drop method
@@ -1876,7 +1883,7 @@ tp :: 'drop' = fun classes
 
 // each method
 tp :: 'each' = fun d f
-    \checkArrayOfObjects d
+    \assertArrayOfObjects d
     d ~forEach f this
     this
 
@@ -1889,12 +1896,12 @@ markNames each name
             options = rest,0
         | else
             x y options @= rest
-        if (options ?: 'data' isNullish !)
-            \checkArrayOfObjects options,data
         mkObj = #
         if (rest,length > 1)
             mkObj attach x y
         mkObj assign options
+        if (mkObj,data isNullish !)
+            mkObj,data = \getDataset mkObj,data
         mkObj,type = name
         this,_marks ~push mkObj
         this
@@ -1915,7 +1922,7 @@ tp,stack = fun data ops
     offset <- 'none'
     ord = ops : 'order' ?? 'none' 
     missing <- 'throw'
-    \checkArrayOfObjects data
+    \assertArrayOfObjects data
     if (data,length == 0)
         'empty data array' \Error throw
     if (level isNullish || (groupBy isNullish) || (stack isNullish))
@@ -2006,7 +2013,7 @@ updateElement = fun elm i state
     channels = ##
     __tp__,markUpdate each chFunc
         ch func @= chFunc
-        val = \func elm,__data__ i state
+        val = \func i state
         if (val isNullish !)
             channels ~set ch val
     channelsHasAnyOf = fun rest
