@@ -69,25 +69,14 @@ allMissingMsg = 'every datum has a missing value'
 isArrayOfObjects = fun d
     d isArray && (d every [typeof a == 'object' && (a != null)])
 
-// assert array of objects/arrays
-assertArrayOfObjects = fun d
-    if (d \isArrayOfObjects !) 
-        'array of objects/arrays expected' \Error throw
-
-// trivial dataset: [{index: 0}, {index: 1}, ...]
-indexDataset = fun n
-    empties n each v i a
-        a;i = # index i
-
 // get dataset
 getDataset = fun ds
     if (ds isInteger && (ds > 0))
-        \indexDataset ds
-    | (ds \isArrayOfObjects)
-        ds
-    | else
-        'dataset must be an array of objects/arrays or a positive integer'
-        | \Error throw 
+        ds = empties ds each v i a
+            a;i = i
+    | (ds isArray !)
+        'dataset must be an array or a positive integer' \Error throw
+    ds
 
 // captitalize first character of string
 capitalize = fun s
@@ -431,6 +420,7 @@ tp :: 'plot' = fun target
 
     // get mark-channel data
     channelData = fun mk ch markUpdate
+        
         data = mk;ch
 
         // nullish constant
@@ -441,7 +431,7 @@ tp :: 'plot' = fun target
         | (data isArray)
             data array \checkData mk ch
         
-        // ~string or accessor
+        // ~string or accessor - use dataset
         | ((data isString && (data,0 == '~')) || (data isFunction))
             ds = mk,data ?? _dataset
             if (ds !)
@@ -1883,7 +1873,8 @@ tp :: 'drop' = fun classes
 
 // each method
 tp :: 'each' = fun d f
-    \assertArrayOfObjects d
+    if (d isArray !)
+        'array expected' \Error throw
     d ~forEach f this
     this
 
@@ -1922,7 +1913,8 @@ tp,stack = fun data ops
     offset <- 'none'
     ord = ops : 'order' ?? 'none' 
     missing <- 'throw'
-    \assertArrayOfObjects data
+    if (data \isArrayOfObjects !) 
+        'array of objects/arrays expected' \Error throw
     if (data,length == 0)
         'empty data array' \Error throw
     if (level isNullish || (groupBy isNullish) || (stack isNullish))
