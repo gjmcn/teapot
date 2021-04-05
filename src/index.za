@@ -203,9 +203,10 @@ finishMark = fun elm mk channels i isSubplot
         elm,__data__ = d
     convenienceEvents each eventType
         if (mk;eventType isNullish !)
-            elm ~addEventListener eventType mk;eventType
+            elm ~addEventListener eventType
+                mk;eventType ~bind elm elm,__data__ i
     if (mk,callback isNullish !)
-        mk ~callback elm i nm
+        mk,callback ~bind elm call elm,__data__ i
 
 // finish note
 finishNote = fun elm channels i
@@ -433,24 +434,45 @@ tp :: 'plot' = fun target
         
         // ~string or accessor - use dataset
         | ((data isString && (data,0 == '~')) || (data isFunction))
+            
+            // get dataset
             ds = mk,data ?? _dataset
             if (ds !)
                 \markChannelError mk,type ch
                     'no dataset attached to mark or plot'
-            if (typeof data == 'function')
-                if (data,length > 2)  // updateable channel
-                    if (nonUpdateChannelNames ~has ch)
-                        + ch' channel is not updateable' \Error throw
-                    if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
-                        + ch' channel is not updateable unless used with text marks'
-                        | \Error throw
-                    markUpdate ~set ch
-                        fun i s
-                            \data ds;i i s
-                ds map d i (\data d i mk,state)
-            | else 
-                ds pick (data ~slice 1)
-            | \checkData mk ch
+            
+            // single-mark type, non xy channel: must be constant, but can be updateable!
+            if (singleMarkNames ~has mk,type && (xyChannelNames ~has ch !))
+                if (data isString)
+                    + mk,type ' is a single mark type, 'ch' cannot be a ~string'
+                    | \Error throw
+                if (nonUpdateChannelNames ~has ch)
+                    + ch' channel is not updateable' \Error throw
+                if (data,length > 1)
+                    + mk,type ' is a single mark type, 'ch
+                    | ' function can only have a state parameter' \Error throw
+                markUpdate ~set ch data  // function length < 2 indicates constant channel
+                val = \data mk,state
+                if (\isInfOrNaN val)
+                    \markChannelError mk,type ch nonFiniteMsg
+                # isConst true data (val ?? (\getChannelDefault mk ch))
+
+            // need not be constant
+            | else
+                if (data isFunction)
+                    if (data,length > 2)  // updateable channel
+                        if (nonUpdateChannelNames ~has ch)
+                            + ch' channel is not updateable' \Error throw
+                        if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
+                            + ch' channel is not updateable unless used with text marks'
+                            | \Error throw
+                        markUpdate ~set ch
+                            fun i s  // function length 2 indicates non-constant channel
+                                \data ds;i i s
+                    ds map d i (\data d i mk,state)
+                | else                             
+                    ds pick (data ~slice 1)
+                | \checkData mk ch
         
         // constant
         | else
@@ -527,10 +549,6 @@ tp :: 'plot' = fun target
 
                 // data and indices of missing values
                 data missingInds isConst #= \channelData mk ch markUpdate
-
-                // single-mark types can only have non-constant x, xx, y, yy 
-                if (singleMarkNames ~has type && (xyChannelNames ~has ch !) && (isConst !))
-                    \markChannelError type ch 'data must be constant'
 
                 // angle channels must be constant when pie channel is used
                 if (pieUsed && (angleChannels ~has ch) && (isConst !))
@@ -1508,6 +1526,7 @@ tp :: 'plot' = fun target
                         | y (\y i)
                         | xOffset (\xOffset i)
                         | yOffset (\yOffset i)
+                        | state (# assign mk,state)
                         | attach xTransform yTransform colorTransform type markUpdate
                     elm attach __tp__
                     __tp__
@@ -1783,7 +1802,16 @@ tp :: 'plot' = fun target
                                 \[do nObs i (yield i)]
                         | else
                             \lineFunc presentInds
-                    gMarks insert ($path)
+                    elm = $path
+
+                    
+                    // !!!!! NOT DONE, JUST TO TEST CONSTANT-UPDATEABLE CHANNELS !!!!!
+                    if markUpdate,size
+                        elm,__tp__ = # state (# assign mk,state) attach markUpdate
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    
+                    
+                    gMarks insert elm
                     | attr 'd' dStr
                     | \finishMark mk channels  // index not required - all other channels constant
                     if channels,note
@@ -1893,6 +1921,13 @@ markNames each name
         mkObj assign options
         if (mkObj,data isNullish !)
             mkObj,data = \getDataset mkObj,data
+        if (mkObj,state isNullish)
+            mkObj,state = #
+        | else
+            if (typeof mkObj,state != 'object')
+                'state option, object expected' \Error throw
+            mkObj,state = # assign mkObj,state
+        Object ~freeze mkObj,state
         mkObj,type = name
         this,_marks ~push mkObj
         this
@@ -1999,13 +2034,16 @@ tp,lookup = fun data key returnMap
 updateElement = fun elm i state
 
     __tp__ #= elm
+    state = __tp__,state assign state
     type #= __tp__
-    
+
     // channels
     channels = ##
     __tp__,markUpdate each chFunc
         ch func @= chFunc
-        val = \func i state
+        val = func,length < 2 ?
+        | (\func state)    // constant channel
+        | (\func i state)  // non-constant channel
         if (val isNullish !)
             channels ~set ch val
     channelsHasAnyOf = fun rest
@@ -2119,6 +2157,10 @@ tp,update = fun rest
         state = rest,2
     | else
         '2 or 3 arguments expected' \Error throw
+    if (state isNullish)
+        state = #
+    | (typeof state != 'object')
+        'state parameter, object expected' \Error throw
     elmts each elm i
         if (elm,__tp__ ?: 'markUpdate' ?: 'size')
             \updateElement elm i state
