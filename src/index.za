@@ -5,7 +5,9 @@
 
 
 // importAll 'd3-shape' d3
-importAll 'https://cdn.skypack.dev/d3-shape' d3  // dev
+importDefault 'https://cdn.skypack.dev/lodash.clonedeep' cloneDeep  // dev
+importDefault 'https://cdn.skypack.dev/lodash.merge' merge          // dev
+importAll 'https://cdn.skypack.dev/d3-shape' d3                     // dev
 import './defaults.js' defOptions defChannels defShapeScheme
 export tp
 
@@ -68,6 +70,10 @@ allMissingMsg = 'every datum has a missing value'
 // is array of objects/arrays?
 isArrayOfObjects = fun d
     d isArray && (d every [typeof a == 'object' && (a != null)])
+
+// is plot container element
+isContainer = fun elm
+    elm ?: '__tp__' ?: 'container' == true
 
 // get dataset
 getDataset = fun ds
@@ -391,7 +397,8 @@ tp = class
 
 tp :: 'plot' = fun target
 
-    _marks _dataset _options #= this
+    _marks _dataset _options _state #= this
+    _state = \cloneDeep _state
 
     if (_marks,length == 0)
         'plot has no marks' \Error throw
@@ -452,7 +459,7 @@ tp :: 'plot' = fun target
                     + mk,type ' is a single mark type, 'ch
                     | ' function can only have a state parameter' \Error throw
                 markUpdate ~set ch data  // function length < 2 indicates constant channel
-                val = \data mk,state
+                val = \data _state
                 if (\isInfOrNaN val)
                     \markChannelError mk,type ch nonFiniteMsg
                 # isConst true data (val ?? (\getChannelDefault mk ch))
@@ -469,7 +476,7 @@ tp :: 'plot' = fun target
                         markUpdate ~set ch
                             fun i s  // function length 2 indicates non-constant channel
                                 \data ds;i i s
-                    ds map d i (\data d i mk,state)
+                    ds map d i (\data d i _state)
                 | else                             
                     ds pick (data ~slice 1)
                 | \checkData mk ch
@@ -1244,6 +1251,7 @@ tp :: 'plot' = fun target
         \op 'class' as opClass
             if (opClass isNullish !)
                 container addClass opClass
+        container prop '__tp__' (# container true updatable (@) state _state)
 
         // background <rect>
         container insert ($rect)
@@ -1474,6 +1482,8 @@ tp :: 'plot' = fun target
 
         // ========== draw marks ==========
 
+        updatable #= container,__tp__
+
         // <g> containing all mark elements
         gMarks = gPlot insert ($g)
         | attr     'font-size'   ('fontSize' \op + 'px')
@@ -1526,8 +1536,7 @@ tp :: 'plot' = fun target
                         | y (\y i)
                         | xOffset (\xOffset i)
                         | yOffset (\yOffset i)
-                        | state (# assign mk,state)
-                        | attach xTransform yTransform colorTransform type markUpdate
+                        | attach container i xTransform yTransform colorTransform type markUpdate
                     elm attach __tp__
                     __tp__
 
@@ -1599,6 +1608,7 @@ tp :: 'plot' = fun target
                                 if (val isNumber ! && (dm ?: 'size'))
                                     val = dm ~get val
                                 schemes,shape,scheme;val
+                            updatable ~push elm
                         gMarks insert elm
                         | \finishMark mk channels i
                         \addNote i xi yi
@@ -1615,6 +1625,7 @@ tp :: 'plot' = fun target
                     | attr 'y2' yyi
                     if markUpdate,size
                         \basic__tp__ elm i
+                        updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
@@ -1674,6 +1685,7 @@ tp :: 'plot' = fun target
                         __tp__ = \basic__tp__ elm i
                         __tp__,xx = xxi
                         __tp__,yy = yyi
+                        updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
@@ -1696,6 +1708,7 @@ tp :: 'plot' = fun target
                         __tp__,yy = yyi
                         __tp__,size = si
                         __tp__,clockwise = cwi
+                        updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i xxi yyi
@@ -1706,6 +1719,7 @@ tp :: 'plot' = fun target
                     elm = \textElm i (channels ~'text' i) (\x i) (\y i)
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
+                        updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
 
@@ -1779,6 +1793,7 @@ tp :: 'plot' = fun target
                         | else
                             __tp__,yy = yyi
                             __tp__,xShift = [this,size / xRange * paneWidth / 2]
+                        updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i nxi nyi
@@ -1807,7 +1822,8 @@ tp :: 'plot' = fun target
                     
                     // !!!!! NOT DONE, JUST TO TEST CONSTANT-UPDATEABLE CHANNELS !!!!!
                     if markUpdate,size
-                        elm,__tp__ = # state (# assign mk,state) attach markUpdate
+                        elm,__tp__ = # attach markUpdate
+                        updatable ~push elm
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     
                     
@@ -1883,6 +1899,11 @@ tp :: 'data' = fun d
     this,_dataset = \getDataset d
     this
 
+// state method
+tp :: 'state' = fun s
+    this,_state = \cloneDeep s
+    this
+
 // drop method
 tp :: 'drop' = fun classes
     this,_marks =
@@ -1921,13 +1942,6 @@ markNames each name
         mkObj assign options
         if (mkObj,data isNullish !)
             mkObj,data = \getDataset mkObj,data
-        if (mkObj,state isNullish)
-            mkObj,state = #
-        | else
-            if (typeof mkObj,state != 'object')
-                'state option, object expected' \Error throw
-            mkObj,state = # assign mkObj,state
-        Object ~freeze mkObj,state
         mkObj,type = name
         this,_marks ~push mkObj
         this
@@ -1936,7 +1950,7 @@ markNames each name
 // ========== static methods ==========
 
 // methods that can be used as instance or static
-array markNames 'option' 'data' 'drop' 'each' each name
+array markNames 'option' 'data' 'state' 'drop' 'each' each name
     tp;name = fun rest
         po = new tp
         po;name ~'apply' po rest
@@ -2031,10 +2045,9 @@ tp,lookup = fun data key returnMap
 // ========== update ==========
 
 // update element
-updateElement = fun elm i state
+updateElement = fun elm state
 
     __tp__ #= elm
-    state = __tp__,state assign state
     type #= __tp__
 
     // channels
@@ -2042,8 +2055,8 @@ updateElement = fun elm i state
     __tp__,markUpdate each chFunc
         ch func @= chFunc
         val = func,length < 2 ?
-        | (\func state)    // constant channel
-        | (\func i state)  // non-constant channel
+        | (\func state)               // constant channel
+        | (\func elm,__tp__,i state)  // non-constant channel
         if (val isNullish !)
             channels ~set ch val
     channelsHasAnyOf = fun rest
@@ -2145,26 +2158,42 @@ updateElement = fun elm i state
     // !!! other mark types here!!!!!!    
             
 // update method
-tp,update = fun rest
-    if (rest,length == 2)
-        elmts state @= rest
+updatePlot = fun isMerge args
+    plotElm @= args
+    if (plotElm isString)
+        plotElm = select plotElm
+        if (plotElm !)
+            'could not find container element' \Error throw
+    if (plotElm \isContainer !)
+        plotElm = plotElm ?: '__tp__' ?: 'container'
+        if (plotElm \isContainer !)
+            'cannot get container element of plot' \Error throw
+    if (args,length == 3)
+        _ elmts newState @= args
         if (elmts isString)
-            elmts = selectAll elmts
+            elmts = plotElm selectAll elmts
         | (elmts ?: Symbol,iterator !)  // assume is a single element
             elmts = @ elmts
-    | (rest,length == 3)
-        elmts = rest,0 selectAll rest,1
-        state = rest,2
-    | else
-        '2 or 3 arguments expected' \Error throw
-    if (state isNullish)
-        state = #
-    | (typeof state != 'object')
-        'state parameter, object expected' \Error throw
-    elmts each elm i
-        if (elm,__tp__ ?: 'markUpdate' ?: 'size')
-            \updateElement elm i state
+    | (args,length == 2)
+        _ newState @= args
+        elmts = plotElm,__tp__,updatable
+    state = isMerge ? (\merge plotElm,__tp__,state newState) newState 
+    plotElm,__tp__,state = state 
+    elmts each elm
+        \updateElement elm state
     undefined
+
+// update method
+tp,update = fun rest
+    if (rest,length != 2 && (rest,length != 3))
+        '2 or 3 arguments expected' \Error throw
+    \updatePlot false rest
+
+// mergeUpdate method
+tp,mergeUpdate = fun rest
+    if (rest,length != 2 && (rest,length != 3))
+        '2 or 3 arguments expected' \Error throw
+    \updatePlot true rest
 
 
 // ========== color schemes ==========
