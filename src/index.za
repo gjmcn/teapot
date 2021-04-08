@@ -387,14 +387,17 @@ tp = class
     this,_marks = @
     this,_dataset = null
     this,_options = #
+    this,_state = null
 
 
 // ========== plot method ==========
 
 tp :: 'plot' = fun target
 
-    _marks _dataset _options _state #= this
-    _state = _options,_outerContainer ? _options,_state (\cloneDeep _state)
+    _marks _dataset _options #= this
+    _state = _options,_outerContainer ?
+    | _options,_outerContainer,__tp__,state
+    | (\cloneDeep this,_state)
 
     if (_marks,length == 0)
         'plot has no marks' \Error throw
@@ -1658,7 +1661,6 @@ tp :: 'plot' = fun target
                             # width wi 
                             | height hi
                             | _outerContainer outerContainer
-                            | _state _state
                         mk ~subplot sp i (channels ~name i ?? null)
                         gMarks insert (sp ~plot)
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
