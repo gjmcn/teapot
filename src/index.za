@@ -71,10 +71,6 @@ allMissingMsg = 'every datum has a missing value'
 isArrayOfObjects = fun d
     d isArray && (d every [typeof a == 'object' && (a != null)])
 
-// is plot container element
-isContainer = fun elm
-    elm ?: '__tp__' ?: 'container' == true
-
 // get dataset
 getDataset = fun ds
     if (ds isInteger && (ds > 0))
@@ -398,7 +394,7 @@ tp = class
 tp :: 'plot' = fun target
 
     _marks _dataset _options _state #= this
-    _state = \cloneDeep _state
+    _state = _options,_outerContainer ? _options,_state (\cloneDeep _state)
 
     if (_marks,length == 0)
         'plot has no marks' \Error throw
@@ -1234,8 +1230,9 @@ tp :: 'plot' = fun target
         // ========== container svg/g, pane and grid ==========
         
         // container
-        if ('_subplot' \op)
+        if _options,_outerContainer
             container = $g
+            outerContainer = _options,_outerContainer
         | else
             container = $svg
             | attr 'viewBox' (+ '0 0 'width' 'height)
@@ -1244,14 +1241,15 @@ tp :: 'plot' = fun target
             | style '-webkit-user-select' 'none'
             | style '-ms-user-select' 'none'
             | style 'user-select' 'none'
+            | prop '__tp__' (# outerContainer true updatable (@) state _state)
             if (\op 'fit' != 'preserve')
                 container
                 | attr 'width'  width
-                | attr 'height' height 
+                | attr 'height' height
+            outerContainer = container
         \op 'class' as opClass
             if (opClass isNullish !)
                 container addClass opClass
-        container prop '__tp__' (# container true updatable (@) state _state)
 
         // background <rect>
         container insert ($rect)
@@ -1482,7 +1480,7 @@ tp :: 'plot' = fun target
 
         // ========== draw marks ==========
 
-        updatable #= container,__tp__
+        updatable #= outerContainer,__tp__
 
         // <g> containing all mark elements
         gMarks = gPlot insert ($g)
@@ -1536,7 +1534,7 @@ tp :: 'plot' = fun target
                         | y (\y i)
                         | xOffset (\xOffset i)
                         | yOffset (\yOffset i)
-                        | attach container i xTransform yTransform colorTransform type markUpdate
+                        | attach outerContainer i xTransform yTransform colorTransform type markUpdate
                     elm attach __tp__
                     __tp__
 
@@ -1656,7 +1654,11 @@ tp :: 'plot' = fun target
                         cxi = xi
                         cyi = yi
                     if (mk,subplot isNullish !)  // subplot
-                        sp = tp ~option (# width wi height hi _subplot true)
+                        sp = tp ~option
+                            # width wi 
+                            | height hi
+                            | _outerContainer outerContainer
+                            | _state _state
                         mk ~subplot sp i (channels ~name i ?? null)
                         gMarks insert (sp ~plot)
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
@@ -2163,20 +2165,24 @@ updatePlot = fun isMerge args
     if (plotElm isString)
         plotElm = select plotElm
         if (plotElm !)
-            'could not find container element' \Error throw
-    if (plotElm \isContainer !)
-        plotElm = plotElm ?: '__tp__' ?: 'container'
-        if (plotElm \isContainer !)
             'cannot get container element of plot' \Error throw
-    if (args,length == 3)
+    if (plotElm ?: '__tp__' ?: 'outerContainer' != true)
+        plotElm = plotElm ?: '__tp__' ?: 'outerContainer'
+        if (plotElm ?: '__tp__' ?: 'outerContainer' != true)
+            'cannot get container element of plot' \Error throw
+    if (args,length == 2)
+        _ newState @= args
+        elmts = plotElm,__tp__,updatable
+    | else  // args,length is 3
         _ elmts newState @= args
         if (elmts isString)
             elmts = plotElm selectAll elmts
         | (elmts ?: Symbol,iterator !)  // assume is a single element
             elmts = @ elmts
-    | (args,length == 2)
-        _ newState @= args
-        elmts = plotElm,__tp__,updatable
+        elmts = elmts filter  // only update updatable elements from this plot
+            fun elm
+                elm ?: '__tp__' ?: 'markUpdate' ?: 'size' &&
+                    elm ?: '__tp__' ?: 'outerContainer' == plotElm 
     state = isMerge ? (\merge plotElm,__tp__,state newState) newState 
     plotElm,__tp__,state = state 
     elmts each elm
