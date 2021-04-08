@@ -33,6 +33,15 @@ nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach' 'note'
 | 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName'
 | 'noteAttach'
 
+// iterable of elements
+iterableOfElelements = fun elmts
+    if (elmts isString)
+        selectAll elmts
+    | (elmts ?: Symbol,iterator)
+        elmts
+    | else
+        @ elmts 
+
 // kind of channel
 getKind = fun ch
     defChannels ~get ch : '_kind'
@@ -2163,32 +2172,34 @@ updateElement = fun elm state
             
 // update method
 updatePlot = fun isMerge args
-    plotElm @= args
-    if (plotElm isString)
-        plotElm = select plotElm
-        if (plotElm !)
-            'cannot get container element of plot' \Error throw
-    if (plotElm ?: '__tp__' ?: 'outerContainer' != true)
-        plotElm = plotElm ?: '__tp__' ?: 'outerContainer'
-        if (plotElm ?: '__tp__' ?: 'outerContainer' != true)
-            'cannot get container element of plot' \Error throw
+    plotElmts = @@
+    args,0 \iterableOfElelements each pe
+        oc = pe ?: '__tp__' ?: 'outerContainer'
+        if (oc == true)
+            plotElmts ~add pe
+        | (oc ?: '__tp__' ?: 'outerContainer' == true)
+            plotElmts ~add oc
     if (args,length == 2)
-        _ newState @= args
-        elmts = plotElm,__tp__,updatable
+        newState = args,1
+        plotElmts each pe
+            isMerge ?
+            | (\merge pe,__tp__,state newState)
+            | (pe,__tp__,state = \cloneDeep newState)
+            pe,__tp__,updatable each elm
+                \updateElement elm pe,__tp__,state
     | else  // args,length is 3
-        _ elmts newState @= args
-        if (elmts isString)
-            elmts = plotElm selectAll elmts
-        | (elmts ?: Symbol,iterator !)  // assume is a single element
-            elmts = @ elmts
-        elmts = elmts filter  // only update updatable elements from this plot
-            fun elm
-                elm ?: '__tp__' ?: 'markUpdate' ?: 'size' &&
-                    elm ?: '__tp__' ?: 'outerContainer' == plotElm 
-    state = isMerge ? (\merge plotElm,__tp__,state newState) newState 
-    plotElm,__tp__,state = state 
-    elmts each elm
-        \updateElement elm state
+        elmts = @@
+        args,1 \iterableOfElelements each elm
+            if (elm ?: '__tp__' ?: 'markUpdate' ?: 'size')  // element is updatable
+                elmts ~add elm
+        newState = args,2
+        plotElmts each pe
+            isMerge ?
+            | (\merge pe,__tp__,state newState)
+            | (pe,__tp__,state = \cloneDeep newState)
+            elmts each elm
+                if (elm ?: '__tp__' ?: 'outerContainer' == pe)  // only update elmts of current plot
+                    \updateElement elm state
     undefined
 
 // update method
