@@ -29,9 +29,13 @@ singleMarkNames = @@ 'line' 'hBand' 'vBand'
 channelNames = new Set (defChannels ~keys)
 
 // channels that cannot be updated
-nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'attach' 'note'
+// (note that subplotAndEventChannels also cannot be updated)
+nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note'
 | 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName'
-| 'noteAttach'
+
+// subplot and event channels
+subplotAndEventChannels =
+    @@ 'subplot' 'mouseenter' 'mouseleave' 'click' 'callback'
 
 // iterable of elements
 iterableOfElelements = fun elmts
@@ -209,15 +213,12 @@ finishMark = fun elm mk channels i isSubplot
     nm = channels ~name i
     if (nm isNullish !)
         elm attr 'data-tp-name' nm
-    d = channels ~'attach' i
-    if (d isNullish !)
-        elm,__data__ = d
     convenienceEvents each eventType
         if (mk;eventType isNullish !)
             elm ~addEventListener eventType
-                mk;eventType ~bind elm elm,__data__ i
+                mk;eventType ~bind elm (channels ~(eventType) i) i
     if (mk,callback isNullish !)
-        mk,callback ~bind elm call elm,__data__ i
+        mk,callback ~'call' elm (channels ~callback i) i
 
 // finish note
 finishNote = fun elm channels i
@@ -227,9 +228,6 @@ finishNote = fun elm channels i
     nm = channels ~noteName i
     if (nm isNullish !)
         elm attr 'data-tp-name' nm
-    d = channels ~noteAttach i
-    if (d isNullish !)
-        elm,__data__ = d
 
 // use color scheme - mutates data if it is an array
 useColorScheme = fun data scheme mk ch
@@ -438,11 +436,23 @@ tp :: 'plot' = fun target
     channelData = fun mk ch markUpdate
         
         data = mk;ch
+        ds = mk,data ?? _dataset
 
         // nullish constant
         if (data isNullish)
             # isConst true data (\getChannelDefault mk ch) 
-        
+
+        // subplot and event channel? - must be (non-state-based) accessor
+        | (subplotAndEventChannels ~has ch)
+            if (ds !)
+                \markChannelError mk,type ch
+                    'no dataset attached to mark or plot'
+            if (data isFunction !)
+                \markChannelError mk,type ch 'function expected'
+            if (data,length > 2)
+                \markChannelError mk,type ch 'channel is not updateable'
+            # isCont false data ds
+
         // data array
         | (data isArray)
             data array \checkData mk ch
@@ -451,7 +461,6 @@ tp :: 'plot' = fun target
         | ((data isString && (data,0 == '~')) || (data isFunction))
             
             // get dataset
-            ds = mk,data ?? _dataset
             if (ds !)
                 \markChannelError mk,type ch
                     'no dataset attached to mark or plot'
@@ -1670,7 +1679,7 @@ tp :: 'plot' = fun target
                             # width wi 
                             | height hi
                             | _outerContainer outerContainer
-                        mk ~subplot sp i (channels ~name i ?? null)
+                        mk,subplot ~'call' sp (channels ~subplot i) i
                         gMarks insert (sp ~plot)
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
                         | \finishMark mk channels i 'subplot'
@@ -2199,7 +2208,7 @@ updatePlot = fun isMerge args
             | (pe,__tp__,state = \cloneDeep newState)
             elmts each elm
                 if (elm ?: '__tp__' ?: 'outerContainer' == pe)  // only update elmts of current plot
-                    \updateElement elm state
+                    \updateElement elm pe,__tp__,state
     undefined
 
 // update method
