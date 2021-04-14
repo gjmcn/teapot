@@ -445,6 +445,9 @@ tp :: 'plot' = fun target
                     if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
                         \markChannelError mk,type ch
                             'channel is not updatable unless used with a text mark'
+                    if (mk,type == 'rect' && (mk,subplot isNullish !))
+                        \markChannelError mk,type ch
+                            'cannot update channel of subplot rect'
                     
                 // single-mark, non-xy channel - pass entire data set
                 if isSingleMarkNonXY
@@ -1699,12 +1702,25 @@ tp :: 'plot' = fun target
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
                         | \finishMark mk channels i 'subplot'
                     | else  // standard rect
-                        gMarks insert ($rect)
+                        elm = $rect
                         | attr 'x' xiLeft
                         | attr 'y' yiTop
                         | attr 'width' wi
                         | attr 'height' hi
                         | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                        if markUpdate,size
+                            __tp__ = \basic__tp__ elm i
+                            __tp__,corner = mk,corner
+                            __tp__,width = wi               
+                            __tp__,height = hi 
+                            if mk,pixels
+                                __tp__,widthFunc = fun v (v + abs)
+                                __tp__,heightFunc = fun v (v + abs)
+                            | else
+                                __tp__,widthFunc = fun v (v / xRange * paneWidth  + abs)
+                                __tp__,heightFunc = fun v (v / yRange * paneHeight + abs)
+                            updatable ~push elm
+                        gMarks insert elm
                         | \finishMark mk channels i
                         \addNote i cxi cyi
                     
@@ -2192,7 +2208,27 @@ updateElement = fun elm state
                 x  = x - xShift
             elm ~setAttribute 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
 
-    // !!! other mark types here!!!!!!   
+    // rect
+    | (type == 'rect')
+        if (channels ~has 'width')
+            __tp__,width = channels ~get 'width' \__tp__,widthFunc
+            \setFrom__tp__ 'width' 'width'
+        if (channels ~has 'height')
+            __tp__,height = channels ~get 'height' \__tp__,heightFunc 
+            \setFrom__tp__ 'height' 'height'
+        if (channels ~has 'x' || (channels ~has 'width'))
+            \updateXY 'x'
+            elm ~setAttribute 'x'
+                __tp__,corner ? __tp__,x (__tp__,x - (__tp__,width / 2))
+        if (channels ~has 'y' || (channels ~has 'height'))
+            \updateXY 'y'
+            elm ~setAttribute 'y'
+                __tp__,y - (__tp__,height / (__tp__,corner ? 1 2))
+        if (channels ~has 'cornerRadius')
+            elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
+
+    // !! OTHER MARKS TYPES HERE !!
+    
     undefined 
             
 // update plot(s)
