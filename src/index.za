@@ -2192,10 +2192,13 @@ updateElement = fun elm state
                 x  = x - xShift
             elm ~setAttribute 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
 
-    // !!! other mark types here!!!!!!    
+    // !!! other mark types here!!!!!!   
+    undefined 
             
-// update method
-updatePlot = fun isMerge args
+// update plot(s)
+updatePlots = fun isMerge args
+
+    // get plot elements
     plotElmts = @@
     args,0 \iterableOfElelements each pe
         oc = pe ?: '__tp__' ?: 'outerContainer'
@@ -2203,40 +2206,43 @@ updatePlot = fun isMerge args
             plotElmts ~add pe
         | (oc ?: '__tp__' ?: 'outerContainer' == true)
             plotElmts ~add oc
-    if (args,length == 2)
-        newState = args,1
+
+    // update state of plot elements
+    newState = args : (args,length - 1)
+    plotElmts each pe
+        isMerge ?
+        | (\merge pe,__tp__,state newState)
+        | (pe,__tp__,state = \cloneDeep newState)
+    
+    // only plot elements passed: update all updatable elements inside each plot
+    if (args,length == 2) 
         plotElmts each pe
-            isMerge ?
-            | (\merge pe,__tp__,state newState)
-            | (pe,__tp__,state = \cloneDeep newState)
             pe,__tp__,updatable each elm
                 \updateElement elm pe,__tp__,state
-    | else  // args,length is 3
+
+    // only update elmts that are updatable and in one of the plot elements    
+    | else  
         elmts = @@
         args,1 \iterableOfElelements each elm
-            if (elm ?: '__tp__' ?: 'markUpdate' ?: 'size')  // element is updatable
+            if (elm ?: '__tp__' ?: 'markUpdate' ?: 'size')
                 elmts ~add elm
-        newState = args,2
-        plotElmts each pe
-            isMerge ?
-            | (\merge pe,__tp__,state newState)
-            | (pe,__tp__,state = \cloneDeep newState)
-            elmts each elm
-                if (elm ?: '__tp__' ?: 'outerContainer' == pe)  // only update elmts of current plot
-                    \updateElement elm pe,__tp__,state
+        elmts each elm
+            oc = elm ?: '__tp__' ?: 'outerContainer'
+            if (plotElmts ~has oc)
+                \updateElement elm oc,__tp__,state
     undefined
 
 // update method
 tp,update = fun rest
     if (rest,length != 2 && (rest,length != 3))
         '2 or 3 arguments expected' \Error throw
-    \updatePlot false rest
+    \updatePlots false rest
 
 // mergeUpdate method
 tp,mergeUpdate = fun rest
     if (rest,length != 2 && (rest,length != 3))
         '2 or 3 arguments expected' \Error throw
-    \updatePlot true rest
+    \updatePlots true rest
 
 
 // ========== color schemes ==========
