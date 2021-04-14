@@ -29,13 +29,12 @@ singleMarkNames = @@ 'line' 'hBand' 'vBand'
 channelNames = new Set (defChannels ~keys)
 
 // channels that cannot be updated
-// (note that subplotAndEventChannels also cannot be updated)
-nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note'
-| 'noteColor' 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName'
+// (note that handlerChannels also cannot be updated)
+nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
+| 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName' 'subplot'
 
-// subplot and event channels
-subplotAndEventChannels =
-    @@ 'subplot' 'mouseenter' 'mouseleave' 'click' 'callback'
+// handler channels
+handlerChannels = @@ 'mouseenter' 'mouseleave' 'click'
 
 // iterable of elements
 iterableOfElelements = fun elmts
@@ -91,6 +90,8 @@ getDataset = fun ds
             a;i = i
     | (ds isArray !)
         'dataset must be an array or a positive integer' \Error throw
+    | (ds,length == 0)
+        'dataset cannot be empty' \Error throw
     ds
 
 // captitalize first character of string
@@ -195,39 +196,6 @@ setUnlessNullish = fun elm attrName val
     if (val isNullish !)
         elm attr attrName val
     elm
-
-// finish mark: set attributes/properties and call the callback
-finishMark = fun elm mk channels i isSubplot
-    if (isSubplot !)
-        elm
-        | attr 'fill'           (channels ~fill i)
-        | attr 'fill-opacity'   (channels ~fillOpacity i)
-        | attr 'stroke'         (channels ~stroke i)
-        | attr 'stroke-opacity' (channels ~strokeOpacity i)
-        | attr 'stroke-width'   (channels ~strokeWidth i)
-        | \setUnlessNullish 'stroke-linecap'   (channels ~strokeCap  i) 
-        | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i)
-    c = channels ~'class' i
-    if (c isNullish !)
-        elm addClass c
-    nm = channels ~name i
-    if (nm isNullish !)
-        elm attr 'data-tp-name' nm
-    convenienceEvents each eventType
-        if (mk;eventType isNullish !)
-            elm ~addEventListener eventType
-                mk;eventType ~bind elm (channels ~(eventType) i) i
-    if (mk,callback isNullish !)
-        mk,callback ~'call' elm (channels ~callback i) i
-
-// finish note
-finishNote = fun elm channels i
-    c = channels ~'noteClass' i
-    if (c isNullish !)
-        elm addClass c
-    nm = channels ~noteName i
-    if (nm isNullish !)
-        elm attr 'data-tp-name' nm
 
 // use color scheme - mutates data if it is an array
 useColorScheme = fun data scheme mk ch
@@ -436,70 +404,82 @@ tp :: 'plot' = fun target
     channelData = fun mk ch markUpdate
         
         data = mk;ch
-        ds = mk,data ?? _dataset
+        isSubplot = ch == 'subplot'
+        isHandler = handlerChannels ~has ch
+        isSingleMarkNonXY =
+            singleMarkNames ~has mk,type && (xyChannelNames ~has ch !)
 
         // nullish constant
         if (data isNullish)
-            # isConst true data (\getChannelDefault mk ch) 
-
-        // subplot and event channel? - must be (non-state-based) accessor
-        | (subplotAndEventChannels ~has ch)
-            if (ds !)
-                \markChannelError mk,type ch
-                    'no dataset attached to mark or plot'
-            if (data isFunction !)
-                \markChannelError mk,type ch 'function expected'
-            if (data,length > 2)
-                \markChannelError mk,type ch 'channel is not updateable'
-            # isCont false data ds
+            # isConst true data (\getChannelDefault mk ch)
 
         // data array
         | (data isArray)
+            if (isSubplot || isHandler || isSingleMarkNonXY)
+                \markChannelError mk,type ch 'unexpected array'
             data array \checkData mk ch
         
-        // ~string or accessor - use dataset
+        // ~string or accessor
         | ((data isString && (data,0 == '~')) || (data isFunction))
             
             // get dataset
+            ds = mk,data ?? _dataset
             if (ds !)
                 \markChannelError mk,type ch
                     'no dataset attached to mark or plot'
             
-            // single-mark type, non xy channel: must be constant, but can be updateable!
-            if (singleMarkNames ~has mk,type && (xyChannelNames ~has ch !))
-                if (data isString)
-                    + mk,type ' is a single mark type, 'ch' cannot be a ~string'
-                    | \Error throw
-                if (nonUpdateChannelNames ~has ch)
-                    + ch' channel is not updateable' \Error throw
-                if (data,length > 1)
-                    + mk,type ' is a single mark type, 'ch
-                    | ' function can only have a state parameter' \Error throw
-                markUpdate ~set ch data  // function length < 2 indicates constant channel
-                val = \data _state
-                if (\isInfOrNaN val)
-                    \markChannelError mk,type ch nonFiniteMsg
-                # isConst true data (val ?? (\getChannelDefault mk ch))
+            // ~string
+            if (data isString)
+                if (isSubplot || isHandler || isSingleMarkNonXY)
+                    \markChannelError mk,type ch 'unexpected ~string'
+                ds pick (data ~slice 1) \checkData mk ch
+                
+            // function
+            | else    
 
-            // need not be constant
-            | else
-                if (data isFunction)
-                    if (data,length > 2)  // updateable channel
-                        if (nonUpdateChannelNames ~has ch)
-                            + ch' channel is not updateable' \Error throw
-                        if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
-                            + ch' channel is not updateable unless used with text marks'
-                            | \Error throw
-                        markUpdate ~set ch
-                            fun i s  // function length 2 indicates non-constant channel
-                                \data ds;i i s
-                    ds map d i (\data d i _state)
-                | else                             
-                    ds pick (data ~slice 1)
-                | \checkData mk ch
+                // check if function has state param - and if allowed to
+                hasStateParam = data,length > 2
+                if hasStateParam
+                    if (nonUpdateChannelNames ~has ch || isHandler)
+                        \markChannelError mk,type ch 'channel is not updatable'
+                    if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
+                        \markChannelError mk,type ch
+                            'channel is not updatable unless used with a text mark'
+                    
+                // single-mark, non-xy channel - pass entire data set
+                if isSingleMarkNonXY
+                    if isHandler
+                        # isConst true data ds  // not used, handlers lookup dataset directly
+                    | else
+                        if hasStateParam
+                            markUpdate ~set ch
+                                fun s  // 1 parameter indicates constant when update
+                                    \data ds null s
+                        val = \data ds null _state
+                        if (\isInfOrNaN val)
+                            \markChannelError mk,type ch nonFiniteMsg
+                        # isConst true data (val ?? (\getChannelDefault mk ch))
+
+                // standard behavior - pass datum
+                | else
+                    if isHandler
+                        # isConst false data ds  // not used, handlers lookup dataset directly
+                                                 // (though is used in that length of data
+                                                 //  must be consistent with other channels)
+                    | else
+                        if hasStateParam
+                            markUpdate ~set ch
+                                fun i s  // 2 parameters indicates non-constant when update
+                                    \data ds;i i s
+                        if isSubplot
+                            # isConst false data ds
+                        | else
+                            ds map d i (\data d i _state) \checkData mk ch
         
         // constant
         | else
+            if (isSubplot || isHandler)
+                \markChannelError mk,type ch 'unexpected constant value'
             if (\isInfOrNaN data)
                 \markChannelError mk,type ch nonFiniteMsg
             # isConst true attach data 
@@ -783,6 +763,7 @@ tp :: 'plot' = fun target
         markSchemes ~set mk schemeInfo
         markPresentInds ~set mk presentInds
         markUpdates ~set mk markUpdate
+
 
     // ========== legend ==========
 
@@ -1503,6 +1484,40 @@ tp :: 'plot' = fun target
 
         updatable #= outerContainer,__tp__
 
+        // finish mark: set attributes/properties
+        finishMark = fun elm mk channels i isSubplot
+            if (isSubplot !)
+                elm
+                | attr 'fill'           (channels ~fill i)
+                | attr 'fill-opacity'   (channels ~fillOpacity i)
+                | attr 'stroke'         (channels ~stroke i)
+                | attr 'stroke-opacity' (channels ~strokeOpacity i)
+                | attr 'stroke-width'   (channels ~strokeWidth i)
+                | \setUnlessNullish 'stroke-linecap'   (channels ~strokeCap  i) 
+                | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i)
+            c = channels ~'class' i
+            if (c isNullish !)
+                elm addClass c
+            nm = channels ~name i
+            if (nm isNullish !)
+                elm attr 'data-tp-name' nm
+            ds = mk,data ?? _dataset
+            convenienceEvents each eventType
+                if (mk;eventType isNullish !)
+                    elm ~addEventListener eventType
+                        i == null ?
+                        | mk;eventType ~bind elm ds null
+                        | mk;eventType ~bind elm ds;i i
+
+        // finish note
+        finishNote = fun elm channels i
+            c = channels ~'noteClass' i
+            if (c isNullish !)
+                elm addClass c
+            nm = channels ~noteName i
+            if (nm isNullish !)
+                elm attr 'data-tp-name' nm
+
         // <g> containing all mark elements
         gMarks = gPlot insert ($g)
         | attr     'font-size'   ('fontSize' \op + 'px')
@@ -1842,16 +1857,16 @@ tp :: 'plot' = fun target
                     elm = $path
 
                     
-                    // !!!!! NOT DONE, JUST TO TEST CONSTANT-UPDATEABLE CHANNELS !!!!!
+                    // !!!!! NOT DONE, JUST TO TEST CONSTANT-UPDATABLE CHANNELS !!!!!
                     if markUpdate,size
-                        elm,__tp__ = # attach markUpdate
+                        elm,__tp__ = # attach markUpdate outerContainer
                         updatable ~push elm
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     
                     
                     gMarks insert elm
                     | attr 'd' dStr
-                    | \finishMark mk channels  // index not required - all other channels constant
+                    | \finishMark mk channels null  // null required to pass full dataset to handlers
                     if channels,note
                         if (type == 'line' && (curveType ~slice (-6) == 'Closed'))
                             cx cy @= presentInds map i (@ (\x i) (\y i))
@@ -2161,7 +2176,7 @@ updateElement = fun elm state
     | (type == 'hBar' || (type == 'vBar'))
         other = type == 'hBar' ? 'xx' 'yy'
         if (\channelsHasAnyOf 'x' 'y' other 'size')
-            \updateXY 'x' 'y'
+            \updateXY 'x' 'y' other
             if (channels ~has 'size')
                 __tp__,size = channels ~get 'size'
             x y #= __tp__

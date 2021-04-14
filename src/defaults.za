@@ -109,7 +109,6 @@ defChannels = ##
 | click         (# _kind 'common' def null)
 | mouseenter    (# _kind 'common' def null)
 | mouseleave    (# _kind 'common' def null)
-| callback      (# _kind 'common' def null)
 
 // text (used by note for mark types other than text)
 | fontSize   (# _kind 'text'                           def null)
