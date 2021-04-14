@@ -1506,8 +1506,8 @@ tp :: 'plot' = fun target
                 if (mk;eventType isNullish !)
                     elm ~addEventListener eventType
                         i == null ?
-                        | mk;eventType ~bind elm ds null
-                        | mk;eventType ~bind elm ds;i i
+                        | (mk;eventType ~bind elm ds null)
+                        | (mk;eventType ~bind elm ds;i i)
 
         // finish note
         finishNote = fun elm channels i
