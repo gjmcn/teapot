@@ -447,7 +447,7 @@ tp :: 'plot' = fun target
                             'channel is not updatable unless used with a text mark'
                     if (mk,type == 'rect' && (mk,subplot isNullish !))
                         \markChannelError mk,type ch
-                            'cannot update channel of subplot rect'
+                            'channel is not updatable since rect is a subplot'
                     
                 // single-mark, non-xy channel - pass entire data set
                 if isSingleMarkNonXY
@@ -1714,11 +1714,11 @@ tp :: 'plot' = fun target
                             __tp__,width = wi               
                             __tp__,height = hi 
                             if mk,pixels
-                                __tp__,widthFunc = fun v (v + abs)
+                                __tp__,widthFunc  = fun v (v + abs)
                                 __tp__,heightFunc = fun v (v + abs)
                             | else
-                                __tp__,widthFunc = fun v (v / xRange * paneWidth  + abs)
-                                __tp__,heightFunc = fun v (v / yRange * paneHeight + abs)
+                                __tp__,widthFunc  = fun v (v / xRange * paneWidth)
+                                __tp__,heightFunc = fun v (v / yRange * paneHeight)
                             updatable ~push elm
                         gMarks insert elm
                         | \finishMark mk channels i
