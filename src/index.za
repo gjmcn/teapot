@@ -311,6 +311,23 @@ dEdge = fun values
     r = (x - xx ^ 2) + (y - yy ^ 2) sqrt / 2 / (size ^ (1 / 3))
     + 'M 'x','y' A 'r' 'r' 0 0 'clockwise' 'xx','yy
 
+// d attribute for line or band
+dLineBand = fun ops
+    missing nObs type curveType presentInds x xx y yy #= ops
+    lineFunc = 
+        if (type == 'line')                
+            d3 ~line [\x a] [\y a]
+        | (type == 'hBand')
+            d3 ~area ~x [\x a] ~y0 [\y a] ~y1 [\yy a]
+        | (type == 'vBand')
+            d3 ~area ~x0 [\x a] ~x1 [\xx a] ~y [\y a]
+    | ~curve (d3 : (+ 'curve'(curveType \capitalize)))
+    if (missing == 'gap')
+        lineFunc ~defined [presentInds ~has a] call 
+            \[do nObs i (yield i)]
+    | else
+        \lineFunc presentInds
+
 // polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
 polygonCentroid = fun p
     i = - 1
@@ -485,7 +502,7 @@ tp :: 'plot' = fun target
                 \markChannelError mk,type ch 'unexpected constant value'
             if (\isInfOrNaN data)
                 \markChannelError mk,type ch nonFiniteMsg
-            # isConst true attach data 
+            # isConst true attach data
     
     // data maps - fill, stroke and shape maps are mark-specific: each key is a
     // a mark object, each value is a data map
@@ -1567,13 +1584,15 @@ tp :: 'plot' = fun target
                             mn = info : 'min'
                             mx = info : 'max'
                             val - mn / (mx - mn) \info,scheme
-                fun elm i
-                    __tp__ =
-                        # x (\x i)
-                        | y (\y i)
-                        | xOffset (\xOffset i)
-                        | yOffset (\yOffset i)
-                        | attach outerContainer i xTransform yTransform colorTransform type markUpdate
+                fun elm i isSingleMarkType
+                    __tp__ = #
+                    | xOffset (\xOffset i)
+                    | yOffset (\yOffset i)
+                    | attach outerContainer i xTransform yTransform
+                    | colorTransform type markUpdate
+                    if (isSingleMarkType !)
+                        __tp__,x = \x i
+                        __tp__,y = \y i
                     elm attach __tp__
                     __tp__
 
@@ -1851,37 +1870,21 @@ tp :: 'plot' = fun target
                     | \finishMark mk channels i
                     \addNote i nxi nyi
 
-            | else  // line, hBand, vBand
+            // line, hBand, vBand
+            | else
                 scope
                     curveType = mk,curve ?? 'linear'
                     if (curveTypes ~has curveType !)
                         + 'mark-'type', invalid curve type: 'mk,curve \Error throw
-                    lineFunc = 
-                        if (type == 'line')                
-                            d3 ~line [\x a] [\y a]
-                        | (type == 'hBand')
-                            d3 ~area ~x [\x a] ~y0 [\y a] ~y1 [\yy a]
-                        | (type == 'vBand')
-                            d3 ~area ~x0 [\x a] ~x1 [\xx a] ~y [\y a]
-                    | ~curve (d3 : (+ 'curve'(curveType \capitalize)))
-                    dStr =
-                        if (mk,missing == 'gap')
-                            lineFunc ~defined [presentInds ~has a] call 
-                                \[do nObs i (yield i)]
-                        | else
-                            \lineFunc presentInds
+                    lineBandArgs = # missing mk,missing
+                    | attach nObs type curveType presentInds x xx y yy
                     elm = $path
-
-                    
-                    // !!!!! NOT DONE, JUST TO TEST CONSTANT-UPDATABLE CHANNELS !!!!!
                     if markUpdate,size
-                        elm,__tp__ = # attach markUpdate outerContainer
-                        updatable ~push elm
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    
-                    
+                        __tp__ = \basic__tp__ elm null true
+                        __tp__ assign lineBandArgs 
+                        updatable ~push elm                    
                     gMarks insert elm
-                    | attr 'd' dStr
+                    | attr 'd' (lineBandArgs \dLineBand)
                     | \finishMark mk channels null  // null required to pass full dataset to handlers
                     if channels,note
                         if (type == 'line' && (curveType ~slice (-6) == 'Closed'))
@@ -2107,9 +2110,13 @@ updateElement = fun elm state
     channels = ##
     __tp__,markUpdate each chFunc
         ch func @= chFunc
-        val = func,length < 2 ?
-        | (\func state)               // constant channel
-        | (\func elm,__tp__,i state)  // non-constant channel
+        val = 
+            if (func,length < 2)  // constant channel
+                \func state  
+            | (singleMarkNames ~has type && (xyChannelNames ~has ch))
+                func
+            | else  // non-constant channel, multi-mark type
+                \func elm,__tp__,i state
         if (val isNullish !)
             channels ~set ch val
     channelsHasAnyOf = fun rest
@@ -2227,9 +2234,24 @@ updateElement = fun elm state
         if (channels ~has 'cornerRadius')
             elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
 
-    // !! OTHER MARKS TYPES HERE !!
+    // line, hBand or vBand
+    | (singleMarkNames ~has type)
+        scope
+            chUsed = false
+            xyChannelNames each ch
+                if (channels ~has ch)
+                    chUsed \= true
+                    chVal = channels ~get ch
+                    __tp__;ch = 
+                        if (chVal isFunction)
+                            fun i
+                                \chVal i state \(__tp__ : (+ ch,0'Transform'))
+                        | else
+                            [chVal]
+            if chUsed
+                elm ~setAttribute 'd' (__tp__ \dLineBand)
     
-    undefined 
+    undefined
             
 // update plot(s)
 updatePlots = fun isMerge args
