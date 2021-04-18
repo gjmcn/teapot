@@ -2111,11 +2111,11 @@ updateElement = fun elm state
     __tp__,markUpdate each chFunc
         ch func @= chFunc
         val = 
-            if (func,length < 2)  // constant channel
+            if (func,length < 2)  // single-mark type, non-xy channel
                 \func state  
             | (singleMarkNames ~has type && (xyChannelNames ~has ch))
                 func
-            | else  // non-constant channel, multi-mark type
+            | else  // multi-mark type
                 \func elm,__tp__,i state
         if (val isNullish !)
             channels ~set ch val
@@ -2241,13 +2241,9 @@ updateElement = fun elm state
             xyChannelNames each ch
                 if (channels ~has ch)
                     chUsed \= true
-                    chVal = channels ~get ch
-                    __tp__;ch = 
-                        if (chVal isFunction)
-                            fun i
-                                \chVal i state \(__tp__ : (+ ch,0'Transform'))
-                        | else
-                            [chVal]
+                    f = channels ~get ch
+                    __tp__;ch = fun i
+                        \f i state \(__tp__ : (+ ch,0'Transform'))
             if chUsed
                 elm ~setAttribute 'd' (__tp__ \dLineBand)
     
