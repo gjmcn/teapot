@@ -5,6 +5,8 @@
 
 
 // importAll 'd3-shape' d3
+// importAs 'lodash.clonedeep' clonedeep cloneDeep
+// import 'lodash.merge' merge
 importDefault 'https://cdn.skypack.dev/lodash.clonedeep' cloneDeep  // dev
 importDefault 'https://cdn.skypack.dev/lodash.merge' merge          // dev
 importAll 'https://cdn.skypack.dev/d3-shape' d3                     // dev
@@ -1960,22 +1962,6 @@ tp :: 'state' = fun s
     this,_state = \cloneDeep s
     this
 
-// drop method
-tp :: 'drop' = fun classes
-    this,_marks =
-        if classes
-            classes = classes trim ~split &/\s+/
-            this,_marks filter
-                fun mark
-                    if (mark : 'class')
-                        markClasses = mark : 'class' trim ~split &/\s+/
-                        markClasses intersection classes : 'size' !
-                    | else
-                        true
-        | else
-            @
-    this
-
 // each method
 tp :: 'each' = fun d f
     if (d isArray !)
@@ -2006,7 +1992,7 @@ markNames each name
 // ========== static methods ==========
 
 // methods that can be used as instance or static
-array markNames 'option' 'data' 'state' 'drop' 'each' each name
+array markNames 'option' 'data' 'state' 'each' each name
     tp;name = fun rest
         po = new tp
         po;name ~'apply' po rest
