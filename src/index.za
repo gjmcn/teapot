@@ -1962,6 +1962,8 @@ tp :: 'data' = fun d
 
 // state method
 tp :: 'state' = fun s
+    if (this,_state != null)
+        'initial state already set' \Error throw
     this,_state = \cloneDeep s
     this
 
