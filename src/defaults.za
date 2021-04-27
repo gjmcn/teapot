@@ -130,7 +130,7 @@ defChannels = ##
 
 // special
 | shape        (# _kind 'special' point 0)
-| area         (# _kind 'special' point 49)
+| area         (# _kind 'special' point 36)
 | size         (# _kind 'special' hBar 0.9 vBar 0.9 edge 0.5)
 | xx           (# _kind 'special' hBar 0 segment 0 hLink 0 vLink 0 edge 0 vBand 0)
 | yy           (# _kind 'special' vBar 0 segment 0 hLink 0 vLink 0 edge 0 hBand 0)
