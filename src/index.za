@@ -3,13 +3,16 @@
 // down. Split up the code when Zap has more compiler options.
 //////////////////////////////////////////////////////////////
 
+////////// dev //////////
+importAll 'https://cdn.skypack.dev/d3-shape' d3
+importDefault 'https://cdn.skypack.dev/lodash@4.17' lodash
+cloneDeep merge #= lodash
+/////////////////////////
 
 // importAll 'd3-shape' d3
-// importAs 'lodash.clonedeep' clonedeep cloneDeep
-// import 'lodash.merge' merge
-importDefault 'https://cdn.skypack.dev/lodash.clonedeep' cloneDeep  // dev
-importDefault 'https://cdn.skypack.dev/lodash.merge' merge          // dev
-importAll 'https://cdn.skypack.dev/d3-shape' d3                     // dev
+// importDefault 'lodash-es/merge.js' merge
+// importDefault 'lodash-es/cloneDeep' cloneDeep
+
 import './defaults.js' defOptions defChannels defShapeScheme
 export tp
 
