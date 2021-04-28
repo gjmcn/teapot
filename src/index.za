@@ -24,8 +24,8 @@ clipCount = 0
 gradientCount = 0
 
 // all mark names
-markNames = @@ 'hBar' 'vBar' 'point' 'rect' 'segment' 'hLink' 'vLink' 'arc'
-| 'edge' 'text' 'line' 'hBand' 'vBand'
+markNames = @@ 'hBar' 'vBar' 'point' 'circle' 'rect' 'segment' 'hLink' 'vLink'
+| 'arc' 'edge' 'text' 'line' 'hBand' 'vBand'
 
 // single marks
 singleMarkNames = @@ 'line' 'hBand' 'vBand'
@@ -69,9 +69,6 @@ curveTypes = @@ 'basis' 'basisOpen' 'bundle' 'cardinal' 'cardinalOpen'
 | 'catmullRom' 'catmullRomOpen' 'linear' 'monotoneX' 'monotoneY' 'natural'
 | 'curveStep' 'curveStepAfter' 'curveStepBefore' 'basisClosed' 'cardinalClosed'
 | 'catmullRomClosed' 'linearClosed'
-
-// convenience events
-convenienceEvents = @ 'click' 'mouseenter' 'mouseleave'
 
 // mark-channel error message
 markChannelError = [+ 'mark-'a', channel-'b', 'c \Error throw]
@@ -760,7 +757,7 @@ tp :: 'plot' = fun target
         
         // ========== area scale ========== 
         
-        if (type == 'point')
+        if (defChannels ~get 'area' ~hasOwnProperty type)
             markAreaInfo ~set mk
                 scope
                     mn = presentInds reduce [a <> (channels ~area b)] Infinity
@@ -777,7 +774,7 @@ tp :: 'plot' = fun target
                         | (mk,areaScale isNumber)
                             [a / mx * mk,areaScale]
                         | else
-                            'mark-point, areaScale must be a number or function'
+                            + 'mark-'type', areaScale must be a number or function'
                             | \Error throw
 
 
@@ -852,9 +849,12 @@ tp :: 'plot' = fun target
                     elm
                 
                 // channels (that may be) shown in legend
-                type == 'point' ?
-                | (@ 'fill' 'stroke' 'shape' 'area')
-                | (@ 'fill' 'stroke')
+                if (type == 'point')
+                    @ 'fill' 'stroke' 'shape' 'area'
+                | (type == 'circle')
+                    @ 'fill' 'stroke' 'area'
+                | else
+                    @ 'fill' 'stroke'
                 | each ch
                     
                     opValue      = mk : (+ ch'Legend')
@@ -868,10 +868,10 @@ tp :: 'plot' = fun target
                     | (ch == 'shape' || (ch == 'area') || chScheme))
                     
                         // title
-                        titleValue   = mk : (+ ch'Title')
+                        titleValue = mk : (+ ch'Title')
                         if (titleValue isNullish !)
                             contentHeight +=
-                                contentHeight ? (1.5 * vGap) 0 + (titleFontSize / 2)
+                                contentHeight ? (2 * vGap) 0 + (titleFontSize / 2)
                             contentWidth \= contentWidth ><
                                 titleCtx \getTextWidth titleValue
                             gContent insert ($text)
@@ -903,10 +903,13 @@ tp :: 'plot' = fun target
                                     dataMaps;ch ~get mk each nameInt
                                         contentHeight += contentHeight ? vGap 0 + (labelFontSize / 2)
                                         pointElm = null
-                                        if (type == 'point')
+                                        if (type == 'point' || (type == 'circle'))
                                             pointElm = \pointSymbol
                                                 # shape
-                                                    channels,shape,length ? 'circle' (channels ~shape)
+                                                    if (type == 'circle' || channels,shape,length)
+                                                        'circle'
+                                                    | else
+                                                        channels ~shape
                                                 | area pointSize
                                                 | x (pointSize sqrt / 2)
                                                 | y contentHeight
@@ -986,7 +989,8 @@ tp :: 'plot' = fun target
                                 scale #= areaInfo
                                 ticks = mk,areaTickValues ?? (@ mn (mn + mx / 2) mx)
                                 if ticks,length
-                                    shp = channels,shape,length ? 'circle' (channels ~shape)
+                                    shp = (type == 'circle' || channels,shape,length) ?
+                                    | 'circle' (channels ~shape)
                                     xMult yMult xShift yShift #= shapeDetails;shp
                                     areas = ticks ~'map' scale
                                     hLengths = areas sqrt `* xMult
@@ -1021,7 +1025,7 @@ tp :: 'plot' = fun target
     
     if ('plot' \op == false)
         gLegend
-    | else 
+    | else
 
 
         // ========== finalize limits, get magnitudes and ranges ========== 
@@ -1527,7 +1531,7 @@ tp :: 'plot' = fun target
             if (nm isNullish !)
                 elm attr 'data-tp-name' nm
             ds = mk,data ?? _dataset
-            convenienceEvents each eventType
+            handlerChannels each eventType
                 if (mk;eventType isNullish !)
                     elm ~addEventListener eventType
                         i == null ?
@@ -1645,30 +1649,37 @@ tp :: 'plot' = fun target
                         | attr 'fill-opacity' (channels ~(opacityChannel) i)
                         | \finishNote channels i
 
-            // point
-            if (type == 'point')
+            // point, circle
+            if (type == 'point' || (type == 'circle'))
                 scope
                     areaScale = markAreaInfo ~get mk : 'scale'
                     presentInds each i
                         xi = \x i
                         yi = \y i
-                        si = channels ~shape i
                         ai = channels ~area i \areaScale
-                        elm = \pointSymbol
-                            # shape si
-                            | area ai
-                            | x xi
-                            | y yi
+                        if (type == 'point')
+                            si = channels ~shape i
+                            elm = \pointSymbol
+                                # shape si
+                                | area ai
+                                | x xi
+                                | y yi
+                        | else
+                            elm = $circle
+                            | attr 'cx' xi
+                            | attr 'cy' yi
+                            | attr 'r' (ai / Math,PI sqrt)
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
-                            __tp__,area = ai
                             __tp__,areaTransform = areaScale
-                            __tp__,shape = si
-                            __tp__,shapeTransform = fun val
-                                dm = dataMaps,shape ~get mk
-                                if (val isNumber ! && (dm ?: 'size'))
-                                    val = dm ~get val
-                                schemes,shape,scheme;val
+                            if (type == 'point')
+                                __tp__,area = ai
+                                __tp__,shape = si
+                                __tp__,shapeTransform = fun val
+                                    dm = dataMaps,shape ~get mk
+                                    if (val isNumber ! && (dm ?: 'size'))
+                                        val = dm ~get val
+                                    schemes,shape,scheme;val
                             updatable ~push elm
                         gMarks insert elm
                         | \finishMark mk channels i
@@ -2143,6 +2154,15 @@ updateElement = fun elm state
             if (channels ~has 'area')
                 __tp__,area = channels ~get 'area' \__tp__,areaTransform
             __tp__ at (@ 'x' 'y' 'shape' 'area') chg 'path' elm \pointSymbol
+
+    // circle
+    | (type == 'circle')
+        \updateXY 'x' 'y'
+        \setFrom__tp__ 'cx' 'x'
+        \setFrom__tp__ 'cy' 'y'
+        if (channels ~has 'area')
+            elm ~setAttribute 'r'
+                channels ~get 'area' \__tp__,areaTransform / Math,PI sqrt
 
     // text
     | (type == 'text')
