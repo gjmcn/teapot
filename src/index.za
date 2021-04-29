@@ -37,6 +37,7 @@ channelNames = new Set (defChannels ~keys)
 // (note that handlerChannels also cannot be updated)
 nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
 | 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName' 'subplot'
+| 'delay' 'duration' 'ease'
 
 // handler channels
 handlerChannels = @@ 'mouseenter' 'mouseleave' 'click'
@@ -348,6 +349,23 @@ dLineBand = fun ops
     | else
         \lineFunc presentInds
 
+// set text transform
+setTextTransform = fun elm x y rot
+    tform = + 'translate('x','y')'
+    if (rot isNullish !)
+        tform = + 'rotate('rot','x','y') 'tform
+    elm attr 'transform' tform
+
+// set transition
+setTransition = fun elm channels i
+    delay = channels ~delay i
+    duration = channels ~duration i
+    ease = channels ~ease i
+    if (delay || duration)
+        elm style 'transition'
+            + 'all, 'ease', 'delay'ms, 'duration'ms'
+    elm
+    
 // polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
 polygonCentroid = fun p
     i = - 1
@@ -1626,8 +1644,6 @@ tp :: 'plot' = fun target
             // text element
             textElm = fun i ti xi yi defaultCenter
                 elm = $text
-                | attr 'x' xi
-                | attr 'y' yi
                 | text ti
                 | attr 'text-anchor'
                     defaultCenter ?
@@ -1640,10 +1656,7 @@ tp :: 'plot' = fun target
                 fontSize = channels ~fontSize i
                 if (fontSize isNullish !)
                     elm attr 'font-size' (fontSize + 'px')
-                rot = channels ~rotate i
-                if (rot isNullish !)
-                    elm attr 'transform' (+ 'rotate('rot','xi','yi')')
-                elm
+                elm \setTextTransform xi yi (channels ~rotate i)
 
             // add note element if used
             addNote = fun i xi yi defaultCenter
@@ -1687,6 +1700,7 @@ tp :: 'plot' = fun target
                             | attr 'cx' xi
                             | attr 'cy' yi
                             | attr 'r' (ai / Math,PI sqrt)
+                            | \setTransition channels i
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
                             __tp__,areaTransform = areaScale
@@ -1761,6 +1775,7 @@ tp :: 'plot' = fun target
                         | attr 'width' wi
                         | attr 'height' hi
                         | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                        | \setTransition channels i
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
                             __tp__,corner = mk,corner
@@ -1823,8 +1838,10 @@ tp :: 'plot' = fun target
             | (type == 'text')
                 presentInds each i
                     elm = \textElm i (channels ~'text' i) (\x i) (\y i)
+                    | \setTransition channels i
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
+                        __tp__,rotate = channels ~rotate i
                         updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
@@ -1894,6 +1911,7 @@ tp :: 'plot' = fun target
                     | attr 'width' bar,width
                     | attr 'height' bar,height
                     | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                    | \setTransition channels i
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         __tp__,size = si
@@ -2188,16 +2206,15 @@ updateElement = fun elm state
 
     // text
     | (type == 'text')
-        \updateXY 'x' 'y'
-        \setFrom__tp__ 'x' 'x'
-        \setFrom__tp__ 'y' 'y'
+        if (\channelsHasAnyOf 'x' 'y' 'rotate')
+            \updateXY 'x' 'y'
+            if (channels ~has 'rotate')
+                __tp__,rotate = channels ~get 'rotate'
+            elm \setTextTransform __tp__,x __tp__,y __tp__,rotate
         if (channels ~has 'fontSize')
             elm ~setAttribute 'font-size' (channels ~get 'fontSize' + 'px')
         if (channels ~has 'text')
             elm text (channels ~get 'text')
-        if (channels ~has 'rotate')
-            elm ~setAttribute 'transform'
-                + 'rotate('(channels ~get 'rotate')','__tp__,x','__tp__,y')'
 
     // segment
     | (type == 'segment')
