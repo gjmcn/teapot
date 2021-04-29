@@ -136,7 +136,7 @@ defChannels = ##
 | yy           (# _kind 'special' vBar 0 segment 0 hLink 0 vLink 0 edge 0 hBand 0)
 | width        (# _kind 'special' rect 1)
 | height       (# _kind 'special' rect 1)
-| cornerRadius (# _kind 'special' rect null arc null)
+| cornerRadius (# _kind 'special' rect null arc null hBar null vBar null)
 | startAngle   (# _kind 'special' arc 0)
 | endAngle     (# _kind 'special' arc (2 * Math,PI))
 | outerRadius  (# _kind 'special' arc 80)

@@ -307,6 +307,24 @@ pointSymbol = fun ops
         d3 ~symbol (d3 : (+ 'symbol'name)) area call
     | attr 'transform' tform
 
+// horizontal bar attribute values
+hBarValues = fun ops
+    x xx y h #= ops
+    xCorner = x <> xx
+    width = x - xx abs
+    height = h
+    yCorner = y - (h / 2)
+    # attach xCorner yCorner width height
+
+// vertical bar attribute values
+vBarValues = fun ops
+    x y yy w #= ops
+    width = w
+    xCorner = x - (w / 2)
+    yCorner = y <> yy
+    height = y - yy abs
+    # attach xCorner yCorner width height
+
 // d attribute for edge mark
 dEdge = fun values
     x xx y yy size clockwise #= values
@@ -1857,30 +1875,34 @@ tp :: 'plot' = fun target
                 presentInds each i
                     xi = \x i
                     yi = \y i
-                    nxi = xi
-                    nyi = yi
                     si = \size i
                     if (type == 'hBar')
-                        yShift = si / yRange * paneHeight / 2
                         xxi = \xx i
-                        yyi = yi - yShift
-                        yi  = yi + yShift
-                    | else  // vBar
-                        xShift = si / xRange * paneWidth / 2
+                        nxi = xi >< xxi
+                        nyi = yi
+                        h = si / yRange * paneHeight
+                        bar = \hBarValues (# x xi xx xxi y yi h h)
+                    | else
+                        nxi = xi
                         yyi = \yy i
-                        xxi = xi + xShift
-                        xi  = xi - xShift
-                    elm = $polygon
-                    | attr 'points' (+ xi','yi' 'xxi','yi' 'xxi','yyi' 'xi','yyi)
+                        nyi = yi <> yyi
+                        w = si / xRange * paneWidth
+                        bar = \vBarValues (# x xi y yi yy yyi w w)
+                    elm = $rect
+                    | attr 'x' bar,xCorner
+                    | attr 'y' bar,yCorner
+                    | attr 'width' bar,width
+                    | attr 'height' bar,height
+                    | \setUnlessNullish 'rx' (channels ~cornerRadius i)
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         __tp__,size = si
                         if (type == 'hBar')
                             __tp__,xx = xxi
-                            __tp__,yShift = [this,size / yRange * paneHeight / 2]
+                            __tp__,heightFunc = [this,size / yRange * paneHeight]
                         | else
                             __tp__,yy = yyi
-                            __tp__,xShift = [this,size / xRange * paneWidth / 2]
+                            __tp__,widthFunc = [this,size / xRange * paneWidth]
                         updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
@@ -2213,18 +2235,19 @@ updateElement = fun elm state
             \updateXY 'x' 'y' other
             if (channels ~has 'size')
                 __tp__,size = channels ~get 'size'
-            x y #= __tp__
+            x xx y yy #= __tp__
             if (type == 'hBar')
-                xx #= __tp__
-                yShift = __tp__ ~yShift
-                yy = y - yShift
-                y  = y + yShift
+                h = __tp__ ~heightFunc
+                bar = \hBarValues (# attach x xx y h)
             | else
-                yy #= __tp__
-                xShift = __tp__ ~xShift
-                xx = x + xShift
-                x  = x - xShift
-            elm ~setAttribute 'points' (+ x','y' 'xx','y' 'xx','yy' 'x','yy)
+                w = __tp__ ~widthFunc
+                bar = \vBarValues (# attach x y yy w)
+            elm ~setAttribute 'x' bar,xCorner
+            elm ~setAttribute 'y' bar,yCorner
+            elm ~setAttribute 'width' bar,width
+            elm ~setAttribute 'height' bar,height
+        if (channels ~has 'cornerRadius')
+            elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
 
     // rect
     | (type == 'rect')
