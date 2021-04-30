@@ -30,6 +30,9 @@ markNames = @@ 'hBar' 'vBar' 'point' 'circle' 'rect' 'segment' 'hLink' 'vLink'
 // single marks
 singleMarkNames = @@ 'line' 'hBand' 'vBand'
 
+// marks that can use transition channels
+transitionMarkNames = @@ 'circle' 'hBar' 'vBar' 'rect' 'text'
+
 // channel names
 channelNames = new Set (defChannels ~keys)
 
@@ -37,7 +40,6 @@ channelNames = new Set (defChannels ~keys)
 // (note that handlerChannels also cannot be updated)
 nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
 | 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName' 'subplot'
-| 'delay' 'duration' 'ease'
 
 // handler channels
 handlerChannels = @@ 'mouseenter' 'mouseleave' 'click'
@@ -356,14 +358,20 @@ setTextTransform = fun elm x y rot
         tform = + 'rotate('rot','x','y') 'tform
     elm attr 'transform' tform
 
-// set transition
-setTransition = fun elm channels i
+// set initial transition
+setTransitionInitial = fun elm channels i
     delay = channels ~delay i
     duration = channels ~duration i
     ease = channels ~ease i
+    \setTransition elm delay duration ease
+
+// set transition
+setTransition = fun elm delay duration ease
     if (delay || duration)
         elm style 'transition'
             + 'all '(duration || 0)'ms 'ease' '(delay || 0)'ms'
+    | else
+        elm : 'style' ~removeProperty 'transition'
     elm
     
 // polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
@@ -1638,6 +1646,10 @@ tp :: 'plot' = fun target
                     if (isSingleMarkType !)
                         __tp__,x = \x i
                         __tp__,y = \y i
+                    if (transitionMarkNames ~has type)
+                        __tp__,delay = channels ~delay i
+                        __tp__,duration = channels ~duration i
+                        __tp__,ease = channels ~ease i
                     elm attach __tp__
                     __tp__
 
@@ -1700,7 +1712,7 @@ tp :: 'plot' = fun target
                             | attr 'cx' xi
                             | attr 'cy' yi
                             | attr 'r' (ai / Math,PI sqrt)
-                            | \setTransition channels i
+                            | \setTransitionInitial channels i
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
                             __tp__,areaTransform = areaScale
@@ -1775,7 +1787,7 @@ tp :: 'plot' = fun target
                         | attr 'width' wi
                         | attr 'height' hi
                         | \setUnlessNullish 'rx' (channels ~cornerRadius i)
-                        | \setTransition channels i
+                        | \setTransitionInitial channels i
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
                             __tp__,corner = mk,corner
@@ -1838,7 +1850,7 @@ tp :: 'plot' = fun target
             | (type == 'text')
                 presentInds each i
                     elm = \textElm i (channels ~'text' i) (\x i) (\y i)
-                    | \setTransition channels i
+                    | \setTransitionInitial channels i
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         __tp__,rotate = channels ~rotate i
@@ -1911,7 +1923,7 @@ tp :: 'plot' = fun target
                     | attr 'width' bar,width
                     | attr 'height' bar,height
                     | \setUnlessNullish 'rx' (channels ~cornerRadius i)
-                    | \setTransition channels i
+                    | \setTransitionInitial channels i
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         __tp__,size = si
@@ -2164,6 +2176,17 @@ updateElement = fun elm state
         if (channels ~has ch)
             elm ~setAttribute attrName __tp__;ch
             
+    // change transition first
+    scope
+        newTransition = false
+        @ 'delay' 'duration' 'ease' each ch
+            if (channels ~has ch)
+                __tp__;ch = channels ~get ch
+                newTransition \= true
+                channels ~'delete' ch
+        if newTransition
+            \setTransition elm __tp__,delay __tp__,duration __tp__,ease
+
     // channels that map directly to an attribute
     channels ~keys each ch
         _attr = defChannels ~get ch : '_attr'
