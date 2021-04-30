@@ -2119,25 +2119,16 @@ tp,stack = fun data ops
     # attach groupNames levels
 
 // lookup
-tp,lookup = fun data key returnMap
-    if returnMap
-        mp = ##
-        if (key isFunction)
-            data each d i
-                mp ~set (\key d i data) d
-        | else
-            data each d
-                mp ~set d;key d
-        mp    
+tp,lookup = fun data key mapFunc
+    mapFunc ?= [a]
+    obj = #
+    if (key isFunction)
+        data each d i
+            obj : (\key d i data) = \mapFunc d i data
     | else
-        obj = #
-        if (key isFunction)
-            data each d i
-                obj : (\key d i data) = d
-        | else
-            data each d
-                obj : d;key = d
-        obj
+        data each d i
+            obj : d;key = \mapFunc d i data
+    obj
 
 
 // ========== update ==========
