@@ -363,7 +363,7 @@ setTransition = fun elm channels i
     ease = channels ~ease i
     if (delay || duration)
         elm style 'transition'
-            + 'all 'duration'ms 'ease' 'delay'ms'
+            + 'all '(duration || 0)'ms 'ease' '(delay || 0)'ms'
     elm
     
 // polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
