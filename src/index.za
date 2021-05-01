@@ -37,12 +37,12 @@ transitionMarkNames = @@ 'circle' 'hBar' 'vBar' 'rect' 'text'
 channelNames = new Set (defChannels ~keys)
 
 // channels that cannot be updated
-// (note that handlerChannels also cannot be updated)
+// (note that handlerChannelNames also cannot be updated)
 nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
 | 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName' 'subplot'
 
 // handler channels
-handlerChannels = @@ 'mouseenter' 'mouseleave' 'click'
+handlerChannelNames = @@ 'mouseenter' 'mouseleave' 'click'
 
 // iterable of elements
 iterableOfElelements = fun elmts
@@ -468,7 +468,7 @@ tp :: 'plot' = fun target
         
         data = mk;ch
         isSubplot = ch == 'subplot'
-        isHandler = handlerChannels ~has ch
+        isHandler = handlerChannelNames ~has ch
         isSingleMarkNonXY =
             singleMarkNames ~has mk,type && (xyChannelNames ~has ch !)
 
@@ -1575,7 +1575,7 @@ tp :: 'plot' = fun target
             if (nm isNullish !)
                 elm attr 'data-tp-name' nm
             ds = mk,data ?? _dataset
-            handlerChannels each eventType
+            handlerChannelNames each eventType
                 if (mk;eventType isNullish !)
                     elm ~addEventListener eventType
                         i == null ?
@@ -2183,7 +2183,6 @@ updateElement = fun elm state
             if (channels ~has ch)
                 __tp__;ch = channels ~get ch
                 newTransition \= true
-                channels ~'delete' ch
         if newTransition
             \setTransition elm __tp__,delay __tp__,duration __tp__,ease
 
