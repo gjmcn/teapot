@@ -25,7 +25,7 @@ gradientCount = 0
 
 // all mark names
 markNames = @@ 'hBar' 'vBar' 'point' 'circle' 'rect' 'segment' 'hLink' 'vLink'
-| 'arc' 'edge' 'text' 'line' 'hBand' 'vBand'
+| 'arc' 'edge' 'text' 'path' 'line' 'hBand' 'vBand'
 
 // single marks
 singleMarkNames = @@ 'line' 'hBand' 'vBand'
@@ -59,6 +59,9 @@ getKind = fun ch
 
 // x and y channels
 xyChannelNames = @@ 'x' 'xx' 'y' 'yy'
+
+// common channels not used by path
+nonPathChannels = @@ 'x' 'y' 'xOffset' 'yOffset'
 
 // fill and stroke channels used in legend
 legendFillStrokeChannels = @@ 'fill' 'fillOpacity'
@@ -608,11 +611,13 @@ tp :: 'plot' = fun target
 
             // mark has this channel?
             kind = \getKind ch
-            if (kind == 'common' ||
+            if (
+            | (kind == 'common' && (type != 'path' || (nonPathChannels ~has ch !))) ||
             | (type == 'text' && (kind == 'text')) ||
             | (type != 'text' && noteUsed && (kind == 'text' || (kind == 'note'))) ||
             | (kind == 'special' && (defChannels ~get ch ~hasOwnProperty type) && 
-            |   (pieUsed ! && (ch == 'pie') !)))
+            |   (pieUsed ! && (ch == 'pie') !))
+            | )
 
                 // push to channel list for this mark
                 channelsList ~add ch
@@ -1639,13 +1644,14 @@ tp :: 'plot' = fun target
                             val - mn / (mx - mn) \info,scheme
                 fun elm i isSingleMarkType
                     __tp__ = #
-                    | xOffset (\xOffset i)
-                    | yOffset (\yOffset i)
                     | attach outerContainer i xTransform yTransform
                     | colorTransform type markUpdate
-                    if (isSingleMarkType !)
-                        __tp__,x = \x i
-                        __tp__,y = \y i
+                    if (type != 'path')
+                        __tp__,xOffset = \xOffset i
+                        __tp__,yOffset = \yOffset i
+                        if (isSingleMarkType !)
+                            __tp__,x = \x i
+                            __tp__,y = \y i
                     if (transitionMarkNames ~has type)
                         __tp__,delay = channels ~delay i
                         __tp__,duration = channels ~duration i
@@ -1937,6 +1943,22 @@ tp :: 'plot' = fun target
                     gMarks insert elm
                     | \finishMark mk channels i
                     \addNote i nxi nyi
+
+            // path
+            | (type == 'path')
+                presentInds each i
+                    elm = $path
+                    | attr 'vector-effect' 'non-scaling-stroke'
+                    | \setUnlessNullish 'd' (channels ~path i)
+                    | attr 'transform'
+                        + 'translate('leftSpace','(topSpace + paneHeight)') scale('
+                        | (paneWidth / xRange)','(paneHeight / yRange -)')'
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,path = channels ~path i
+                        updatable ~push elm
+                    gMarks insert elm
+                    | \finishMark mk channels i
 
             // line, hBand, vBand
             | else
@@ -2297,6 +2319,11 @@ updateElement = fun elm state
                 __tp__,y - (__tp__,height / (__tp__,corner ? 1 2))
         if (channels ~has 'cornerRadius')
             elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
+
+    // path
+    | (type == 'path')
+        if (channels ~has 'path')
+            elm ~setAttribute 'd' (channels ~get 'path')
 
     // line, hBand or vBand
     | (singleMarkNames ~has type)
