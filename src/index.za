@@ -61,7 +61,7 @@ getKind = fun ch
 xyChannelNames = @@ 'x' 'xx' 'y' 'yy'
 
 // common channels not used by path
-nonPathChannels = @@ 'x' 'y' 'xOffset' 'yOffset'
+nonPathChannelNames = @@ 'x' 'y' 'xOffset' 'yOffset'
 
 // fill and stroke channels used in legend
 legendFillStrokeChannels = @@ 'fill' 'fillOpacity'
@@ -612,9 +612,10 @@ tp :: 'plot' = fun target
             // mark has this channel?
             kind = \getKind ch
             if (
-            | (kind == 'common' && (type != 'path' || (nonPathChannels ~has ch !))) ||
+            | (kind == 'common' && (type != 'path' || (nonPathChannelNames ~has ch !))) ||
             | (type == 'text' && (kind == 'text')) ||
-            | (type != 'text' && noteUsed && (kind == 'text' || (kind == 'note'))) ||
+            | (type != 'text' && (type != 'path') && noteUsed &&
+            |   (kind == 'text' || (kind == 'note'))) ||
             | (kind == 'special' && (defChannels ~get ch ~hasOwnProperty type) && 
             |   (pieUsed ! && (ch == 'pie') !))
             | )
@@ -779,32 +780,36 @@ tp :: 'plot' = fun target
                         yMax \= yMax >< (\y i + (\size i / 2)) 
                     yMaxNeed \= false
             if xMinNeed
-                presentInds each i
-                    xMin \= xMin <> (\x i)
+                if x
+                    presentInds each i
+                        xMin \= xMin <> (\x i)
                 if xx
                     presentInds each i
                         xMin \= xMin <> (\xx i)
             if xMaxNeed
-                presentInds each i
-                    xMax \= xMax >< (\x i)
+                if x
+                    presentInds each i
+                        xMax \= xMax >< (\x i)
                 if xx
                     presentInds each i
                         xMax \= xMax >< (\xx i)
             if yMinNeed
-                presentInds each i
-                    yMin \= yMin <> (\y i)
+                if y
+                    presentInds each i
+                        yMin \= yMin <> (\y i)
                 if yy
                     presentInds each i
                         yMin \= yMin <> (\yy i)
             if yMaxNeed
-                presentInds each i
-                    yMax \= yMax >< (\y i)
+                if y
+                    presentInds each i
+                        yMax \= yMax >< (\y i)
                 if yy
                     presentInds each i
                         yMax \= yMax >< (\yy i)
 
         
-        // ========== area scale ========== 
+        // ========== area scale ==========
         
         if (defChannels ~get 'area' ~hasOwnProperty type)
             markAreaInfo ~set mk
@@ -1406,7 +1411,7 @@ tp :: 'plot' = fun target
 
         // grid
         usedDims each dim
-            if (ticks;dim,length)
+            if ticks;dim,length
                 dimGrid = + dim'Grid' \op
                 if (dimGrid || ('grid' \op && (dimGrid isNullish)))
                     gGrid = gPlot insert ($g)
@@ -1987,7 +1992,6 @@ tp :: 'plot' = fun target
                         | (paneWidth / xRange)','(paneHeight / yRange -)')'
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
-                        __tp__,path = channels ~path i
                         updatable ~push elm
                     gMarks insert elm
                     | \finishMark mk channels i
@@ -2397,7 +2401,7 @@ updatePlots = fun isMerge args
             pe,__tp__,updatable each elm
                 \updateElement elm pe,__tp__,state
 
-    // only update elmts that are updatable and in one of the plot elements    
+    // only update elements that are updatable and in one of the plot elements    
     | else  
         elmts = @@
         args,1 \iterableOfElelements each elm
