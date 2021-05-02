@@ -1270,31 +1270,61 @@ tp :: 'plot' = fun target
         leftSpace   ?= \getSideSpace 'left'
 
 
-        // ========== width, height, paneWidth, paneHeight, scales, transforms ==========
+        // ========== width, height, paneWidth, paneHeight ==========
 
         plotSpace = \fourOption _options 'plotSpace'
-        paneHeight = 'paneHeight' \op 
-        paneWidth  = 'paneWidth'  \op 
-        if (paneHeight isNullish)
-            height = 'height' \op
-            paneHeight = height - plotSpace,0 - topSpace - bottomSpace - plotSpace,2
-            if (paneHeight <= 0)
-                'computed pane height is less than or equal to 0' \Error throw
-        | else
-            height = plotSpace,0 + topSpace + plotSpace,2 +
-                paneHeight + bottomSpace ><
-                    legendOut ? legendHeight 0
-        if (paneWidth isNullish)
-            width = 'width' \op
-            paneWidth = width - plotSpace,3 - leftSpace - rightSpace - plotSpace,1
-            if (legendOut && legendWidth)
-                paneWidth -= legendWidth + legendGap
-            if (paneWidth <= 0)
-                'computed pane width is less than or equal to 0' \Error throw             
-        | else
-            width = plotSpace,3 + leftSpace + paneWidth + rightSpace + plotSpace,1
+        width = null
+        height = null
+        paneWidth = null
+        paneHeight = null
+        setWidthFromPaneWidth = fun
+            width \=
+                plotSpace,3 + leftSpace + paneWidth + rightSpace + plotSpace,1
             if (legendOut && legendWidth)
                 width += legendWidth + legendGap
+        setHeightFromPaneHeight = fun
+            height \= plotSpace,0 + topSpace + plotSpace,2 +
+                paneHeight + bottomSpace ><
+                    legendOut ? legendHeight 0
+        setPaneHeightFromHeight = fun
+            paneHeight \=
+                height - plotSpace,0 - topSpace - bottomSpace - plotSpace,2
+        if ('width' \op == 'preserve' && ('height' \op == 'preserve'))
+            'width and height are both "preserve"' \Error throw
+        if ('setPaneSize' \op)
+            paneWidth = 'width' \op
+            paneHeight = 'height' \op 
+            if (paneHeight == 'preserve')
+                paneHeight = paneWidth / xRange * yRange
+            | (paneWidth == 'preserve')
+                paneWidth = paneHeight / yRange * xRange
+            \setWidthFromPaneWidth
+            \setHeightFromPaneHeight
+        | else
+            width = 'width' \op
+            height = 'height' \op
+            if (width != 'preserve')
+                paneWidth =
+                    width - plotSpace,3 - leftSpace - rightSpace - plotSpace,1
+                if (legendOut && legendWidth)
+                    paneWidth -= legendWidth + legendGap
+                if (height == 'preserve')
+                    paneHeight = paneWidth / xRange * yRange
+                    \setHeightFromPaneHeight
+                | else
+                    \setPaneHeightFromHeight
+            | else
+                \setPaneHeightFromHeight                    
+                paneWidth = paneHeight / yRange * xRange
+                \setWidthFromPaneWidth
+        if (paneWidth <= 0)
+            'pane width is less than or equal to 0' \Error throw
+        if (paneHeight <= 0)
+            'pane height is less than or equal to 0' \Error throw
+
+
+        // ========== xScale, yScale, xTransform, yTransform ==========
+
         xScale = [a - xMin / xRange * paneWidth]
         yScale = [a - yMin / yRange * paneHeight -]
         xTransform = fun val
@@ -1951,7 +1981,9 @@ tp :: 'plot' = fun target
                     | attr 'vector-effect' 'non-scaling-stroke'
                     | \setUnlessNullish 'd' (channels ~path i)
                     | attr 'transform'
-                        + 'translate('leftSpace','(topSpace + paneHeight)') scale('
+                        + 'translate('
+                        | (\xScale 0 + leftSpace)','(\yScale 0 + topSpace + paneHeight)
+                        | ') scale('
                         | (paneWidth / xRange)','(paneHeight / yRange -)')'
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i

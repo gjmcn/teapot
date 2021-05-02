@@ -8,6 +8,7 @@ defOptions = #
 
 // top-level
 | plot true
+| setPaneSize false
 | width 260
 | height 260
 | background 'transparent'
