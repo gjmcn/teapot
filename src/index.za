@@ -1661,6 +1661,14 @@ tp :: 'plot' = fun target
             yy = fun i
                 channels ~yy i \yScale + topSpace + paneHeight - (\yOffset i)
 
+            // insert mark element
+            insertMark = fun elm i
+                if (channels ~listen i !)
+                    elm attr 'pointer-events' 'none'
+                channels ~front i < 0 ?
+                | (gMarks insert elm [gMarks,firstChild])
+                | (gMarks insert elm)
+
             // function to create basic __tp__ object
             basic__tp__ =
                 if (markUpdate ~has 'fill' || (markUpdate ~has 'stroke'))
@@ -1712,7 +1720,7 @@ tp :: 'plot' = fun target
                 elm \setTextTransform xi yi (channels ~rotate i)
 
             // add note element if used
-            addNote = fun i xi yi defaultCenter
+            addNote = fun elm i xi yi defaultCenter
                 if channels,note
                     ti = channels ~note i
                     if (ti string)
@@ -1726,8 +1734,9 @@ tp :: 'plot' = fun target
                             nOp == '_fillOpacity' || (nOp == '_strokeOpacity') ?
                             | (nOp ~slice 1)
                             | 'noteOpacity'
-                        gMarks insert
-                            \textElm i ti xi yi defaultCenter
+                        noteElm = \textElm i ti xi yi defaultCenter
+                        elm ~after noteElm
+                        noteElm
                         | attr 'stroke' 'none'
                         | attr 'fill' (channels ~(colorChannel) i)
                         | attr 'fill-opacity' (channels ~(opacityChannel) i)
@@ -1766,9 +1775,9 @@ tp :: 'plot' = fun target
                                         val = dm ~get val
                                     schemes,shape,scheme;val
                             updatable ~push elm
-                        gMarks insert elm
+                        \insertMark elm i
                         | \finishMark mk channels i
-                        \addNote i xi yi
+                        \addNote elm i xi yi
 
             // segment
             | (type == 'segment')
@@ -1783,9 +1792,9 @@ tp :: 'plot' = fun target
                     if markUpdate,size
                         \basic__tp__ elm i
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
-                    \addNote i xxi yyi
+                    \addNote elm i xxi yyi
 
             // rect
             | (type == 'rect')
@@ -1841,9 +1850,9 @@ tp :: 'plot' = fun target
                                 __tp__,widthFunc  = fun v (v / xRange * paneWidth)
                                 __tp__,heightFunc = fun v (v / yRange * paneHeight)
                             updatable ~push elm
-                        gMarks insert elm
+                        \insertMark elm i
                         | \finishMark mk channels i
-                        \addNote i cxi cyi
+                        \addNote elm i cxi cyi
                     
             // hLink, vLink
             | ((type == 'hLink') || (type == 'vLink'))
@@ -1860,9 +1869,9 @@ tp :: 'plot' = fun target
                         __tp__,xx = xxi
                         __tp__,yy = yyi
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
-                    \addNote i xxi yyi
+                    \addNote elm i xxi yyi
 
             // edge
             | (type == 'edge')
@@ -1883,9 +1892,9 @@ tp :: 'plot' = fun target
                         __tp__,size = si
                         __tp__,clockwise = cwi
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
-                    \addNote i xxi yyi
+                    \addNote elm i xxi yyi
 
             // text
             | (type == 'text')
@@ -1896,7 +1905,7 @@ tp :: 'plot' = fun target
                         __tp__ = \basic__tp__ elm i
                         __tp__,rotate = channels ~rotate i
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
 
             // arc
@@ -1933,12 +1942,13 @@ tp :: 'plot' = fun target
                         | ~startAngle (channels ~startAngle i) 
                         | ~endAngle   (channels ~endAngle   i)
                         | ~padAngle   (channels ~padAngle   i)
-                    gMarks insert ($path)
+                    elm = $path
+                    \insertMark elm i
                     | attr 'd' (\arcObj)
                     | attr 'transform' (+ 'translate('xi' 'yi')')
                     | \finishMark mk channels i
                     cxi cyi @= arcObj ~centroid
-                    \addNote i (xi + cxi) (yi + cyi)
+                    \addNote elm i (xi + cxi) (yi + cyi)
 
             // hBar, vBar
             | (type == 'hBar' || (type == 'vBar'))
@@ -1975,9 +1985,9 @@ tp :: 'plot' = fun target
                             __tp__,yy = yyi
                             __tp__,widthFunc = [this,size / xRange * paneWidth]
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
-                    \addNote i nxi nyi
+                    \addNote elm i nxi nyi
 
             // path
             | (type == 'path')
@@ -1993,7 +2003,7 @@ tp :: 'plot' = fun target
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         updatable ~push elm
-                    gMarks insert elm
+                    \insertMark elm i
                     | \finishMark mk channels i
 
             // line, hBand, vBand
@@ -2009,24 +2019,24 @@ tp :: 'plot' = fun target
                         __tp__ = \basic__tp__ elm null true
                         __tp__ assign lineBandArgs 
                         updatable ~push elm                    
-                    gMarks insert elm
+                    \insertMark elm
                     | attr 'd' (lineBandArgs \dLineBand)
                     | \finishMark mk channels null  // null required to pass full dataset to handlers
                     if channels,note
                         if (type == 'line' && (curveType ~slice (-6) == 'Closed'))
                             cx cy @= presentInds map i (@ (\x i) (\y i))
                             | \polygonCentroid
-                            \addNote null cx cy 'defaultCenter'
+                            \addNote elm null cx cy 'defaultCenter'
                         | else
                             maxInd = presentInds max
                             fxi = \x maxInd
                             fyi = \y maxInd
                             if (type == 'line')
-                                \addNote null fxi fyi
+                                \addNote elm null fxi fyi
                             | (type == 'hBand')
-                                \addNote null fxi (fyi + (\yy maxInd) / 2)
+                                \addNote elm null fxi (fyi + (\yy maxInd) / 2)
                             | else  // vBand
-                                \addNote null (fxi + (\xx maxInd) / 2) fyi
+                                \addNote elm null (fxi + (\xx maxInd) / 2) fyi
 
 
         // ========== insert legend ==========
@@ -2255,6 +2265,21 @@ updateElement = fun elm state
         elm ~setAttribute 'fill' (channels ~get 'fill' \__tp__,colorTransform 'fill')
     if (channels ~has 'stroke')
         elm ~setAttribute 'stroke' (channels ~get 'stroke' \__tp__,colorTransform 'stroke')
+
+    // front
+    if (channels ~has 'front')
+        scope
+            front = channels ~get 'front' number
+            if (front < 0)
+                elm lower
+            | (front > 0)
+                elm raise
+
+    // listen
+    if (channels ~has 'listen')
+        channels ~get 'listen' ?
+        | (elm ~removeAttribute 'pointer-events')
+        | (elm ~setAttribute 'pointerEvents' 'none')
 
     // point
     if (type == 'point')
