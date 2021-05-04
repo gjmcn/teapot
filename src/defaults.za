@@ -128,8 +128,6 @@ defChannels = ##
 | noteOpacity (# _kind 'note' def 1)
 | noteXOffset (# _kind 'note' def 0 segment 4 hLink 4 edge 4 hBar 4 line 4 hBand 4)
 | noteYOffset (# _kind 'note' def 0 point 8 circle 8 vLink 5 vBar 5 vBand 5)
-| noteClass   (# _kind 'note' def null)
-| noteName    (# _kind 'note' def null)
 
 // special
 | shape        (# _kind 'special' point 0)

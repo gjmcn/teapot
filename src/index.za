@@ -39,7 +39,7 @@ channelNames = new Set (defChannels ~keys)
 // channels that cannot be updated
 // (note that handlerChannelNames also cannot be updated)
 nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
-| 'noteOpacity' 'noteXOffset' 'noteYOffset' 'noteClass' 'noteName' 'subplot'
+| 'noteOpacity' 'noteXOffset' 'noteYOffset' 'subplot'
 
 // handler channels
 handlerChannelNames = @@ 'mouseenter' 'mouseleave' 'click'
@@ -1622,15 +1622,6 @@ tp :: 'plot' = fun target
                         | (mk;eventType ~bind elm ds null)
                         | (mk;eventType ~bind elm ds;i i)
 
-        // finish note
-        finishNote = fun elm channels i
-            c = channels ~'noteClass' i
-            if (c isNullish !)
-                elm addClass c
-            nm = channels ~noteName i
-            if (nm isNullish !)
-                elm attr 'data-tp-name' nm
-
         // <g> containing all mark elements
         gMarks = gPlot insert ($g)
         | attr     'font-size'   ('fontSize' \op + 'px')
@@ -1740,7 +1731,6 @@ tp :: 'plot' = fun target
                         | attr 'stroke' 'none'
                         | attr 'fill' (channels ~(colorChannel) i)
                         | attr 'fill-opacity' (channels ~(opacityChannel) i)
-                        | \finishNote channels i
 
             // point, circle
             if (type == 'point' || (type == 'circle'))
