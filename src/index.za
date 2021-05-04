@@ -1827,7 +1827,7 @@ tp :: 'plot' = fun target
                             | height hi
                             | _outerContainer outerContainer
                         mk,subplot ~'call' sp (channels ~subplot i) i
-                        gMarks insert (sp ~plot)
+                        \insertMark (sp ~plot) i
                         | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
                         | \finishMark mk channels i 'subplot'
                     | else  // standard rect
