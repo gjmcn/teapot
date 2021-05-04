@@ -1720,7 +1720,7 @@ tp :: 'plot' = fun target
                 elm \setTextTransform xi yi (channels ~rotate i)
 
             // add note element if used
-            addNote = fun elm i xi yi defaultCenter
+            addNote = fun markElm i xi yi defaultCenter
                 if channels,note
                     ti = channels ~note i
                     if (ti string)
@@ -1735,7 +1735,7 @@ tp :: 'plot' = fun target
                             | (nOp ~slice 1)
                             | 'noteOpacity'
                         noteElm = \textElm i ti xi yi defaultCenter
-                        elm ~after noteElm
+                        markElm ~after noteElm
                         noteElm
                         | attr 'stroke' 'none'
                         | attr 'fill' (channels ~(colorChannel) i)
@@ -2279,7 +2279,7 @@ updateElement = fun elm state
     if (channels ~has 'listen')
         channels ~get 'listen' ?
         | (elm ~removeAttribute 'pointer-events')
-        | (elm ~setAttribute 'pointerEvents' 'none')
+        | (elm ~setAttribute 'pointer-events' 'none')
 
     // point
     if (type == 'point')
