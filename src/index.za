@@ -920,12 +920,14 @@ tp :: 'plot' = fun target
                     if (opValue == true ||
                     | (opValue != false && channels;ch,length) &&
                     | (ch == 'shape' || (ch == 'area') || chScheme))
+
+                        contentHeight += contentHeight ? (vGap * 0.75) 0
                     
                         // title
                         titleValue = mk : (+ ch'Title')
                         if (titleValue isNullish !)
                             contentHeight +=
-                                contentHeight ? (2 * vGap) 0 + (titleFontSize / 2)
+                                contentHeight ? vGap 0 + (titleFontSize / 2)
                             contentWidth \= contentWidth ><
                                 titleCtx \getTextWidth titleValue
                             gContent insert ($text)
