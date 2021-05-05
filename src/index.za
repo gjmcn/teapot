@@ -1,7 +1,7 @@
-//////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // Everything in one big file for now to keep the bundle size
-// down. Split up the code when Zap has more compiler options.
-//////////////////////////////////////////////////////////////
+// down. Split up the code when Zap has better compiler options.
+////////////////////////////////////////////////////////////////
 
 ////////// dev //////////
 importAll 'https://cdn.skypack.dev/d3-shape' d3
@@ -2233,8 +2233,23 @@ updateElement = fun elm state
     setFrom__tp__ = fun attrName ch
         if (channels ~has ch)
             elm ~setAttribute attrName __tp__;ch
-            
-    // change transition first
+
+    // front
+    if (channels ~has 'front')
+        scope
+            front = channels ~get 'front' number
+            if (front < 0)
+                elm lower
+            | (front > 0)
+                elm raise
+
+    // listen
+    if (channels ~has 'listen')
+        channels ~get 'listen' ?
+        | (elm ~removeAttribute 'pointer-events')
+        | (elm ~setAttribute 'pointer-events' 'none')
+
+    // change transition before any channels that use transition
     scope
         newTransition = false
         @ 'delay' 'duration' 'ease' each ch
@@ -2255,21 +2270,6 @@ updateElement = fun elm state
         elm ~setAttribute 'fill' (channels ~get 'fill' \__tp__,colorTransform 'fill')
     if (channels ~has 'stroke')
         elm ~setAttribute 'stroke' (channels ~get 'stroke' \__tp__,colorTransform 'stroke')
-
-    // front
-    if (channels ~has 'front')
-        scope
-            front = channels ~get 'front' number
-            if (front < 0)
-                elm lower
-            | (front > 0)
-                elm raise
-
-    // listen
-    if (channels ~has 'listen')
-        channels ~get 'listen' ?
-        | (elm ~removeAttribute 'pointer-events')
-        | (elm ~setAttribute 'pointer-events' 'none')
 
     // point
     if (type == 'point')
