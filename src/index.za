@@ -2192,14 +2192,20 @@ tp,stack = fun data ops
 
 // lookup
 tp,lookup = fun data key mapFunc
-    mapFunc ?= [a]
+    mf = 
+        if (mapFunc isFunction)
+            mapFunc
+        | (mapFunc isNullish)
+            [a]
+        | else
+            [a : mapFunc]
     obj = #
     if (key isFunction)
         data each d i
-            obj : (\key d i data) = \mapFunc d i data
+            obj : (\key d i data) = \mf d i data
     | else
         data each d i
-            obj : d;key = \mapFunc d i data
+            obj : d;key = \mf d i data
     obj
 
 
