@@ -825,10 +825,17 @@ tp :: 'plot' = fun target
                         | (mk,areaScale isFunction)
                             fun val
                                 mk ~areaScale val mn mx
-                        | (mk,areaScale isNumber)
-                            [a / mx * mk,areaScale]
+                        | (mk,areaScale isArray)
+                            mnArea = mk,areaScale,0 ?? mn
+                            mxArea = mk,areaScale,1 ?? mx
+                            if (mnArea >= mxArea)
+                                + 'mark-'type', area min and max are equal or the wrong way round'
+                                | \Error throw
+                            rng = mx - mn
+                            rngArea = mxArea - mnArea
+                            [a - mn / rng * rngArea + mnArea]
                         | else
-                            + 'mark-'type', areaScale must be a number or function'
+                            + 'mark-'type', areaScale must be an array or function'
                             | \Error throw
 
 
