@@ -4,14 +4,14 @@
 ////////////////////////////////////////////////////////////////
 
 ////////// dev //////////
-// importAll 'https://cdn.skypack.dev/d3-shape' d3
-// importDefault 'https://cdn.skypack.dev/lodash@4.17' lodash
-// cloneDeep merge #= lodash
+importAll 'https://cdn.skypack.dev/d3-shape' d3
+importDefault 'https://cdn.skypack.dev/lodash@4.17' lodash
+cloneDeep merge #= lodash
 /////////////////////////
 
-importAll 'd3-shape' d3
-importDefault 'lodash-es/merge.js' merge
-importDefault 'lodash-es/cloneDeep' cloneDeep
+// importAll 'd3-shape' d3
+// importDefault 'lodash-es/merge.js' merge
+// importDefault 'lodash-es/cloneDeep' cloneDeep
 
 import './defaults.js' defOptions defChannels defShapeScheme
 export tp
@@ -421,6 +421,11 @@ colorRamp = fun schemeFun width height
     | attr 'fill'   (+ 'url(#'id')')
     g
 
+// add to target
+addToTarget = fun content target
+    if target
+        typeof target == 'string' ? (select target) target ~append content
+    content
 
 // ========== constructor ==========
 
@@ -2066,9 +2071,7 @@ tp :: 'plot' = fun target
 
         // ========== insert and return container ==========
 
-        if target
-            typeof target == 'string' ? (select target) target ~append container
-        container
+        container \addToTarget target
  
 
 // ========== other instance methods ==========
@@ -2213,6 +2216,22 @@ tp,lookup = fun data key mapFunc
             obj : d;key = \mf d i data
     obj
 
+// group
+tp : 'group' = fun data key mapFunc
+    data group key mapFunc array
+
+// facet
+tp : 'facet' = fun data key mapFunc
+    container = $div
+    data group key
+        fun grp name
+            plotObj = new tp
+            mapFunc ~'call' plotObj grp name
+            plotObj ~plot container
+    # plot
+        fun target
+            this,container \addToTarget target
+    | attach container
 
 // ========== update ==========
 
