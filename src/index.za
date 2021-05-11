@@ -2224,14 +2224,15 @@ tp : 'group' = fun data key mapFunc
 tp : 'facet' = fun data key mapFunc
     container = $div
     data group key
-        fun grp name
+        fun grp name index
             plotObj = new tp
-            mapFunc ~'call' plotObj grp name
+            mapFunc ~'call' plotObj grp name index
             plotObj ~plot container
     # plot
         fun target
             this,container \addToTarget target
     | attach container
+
 
 // ========== update ==========
 
