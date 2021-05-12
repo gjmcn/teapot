@@ -2210,6 +2210,7 @@ tp,lookup = fun data key mapFunc
         | (mapFunc isNullish)
             [a]
         | else
+            mapFunc = mapFunc \cropTilde
             [a : mapFunc]
     obj = #
     if (key isFunction)
