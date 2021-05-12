@@ -2223,8 +2223,27 @@ tp,lookup = fun data key mapFunc
     obj
 
 // group
-tp : 'group' = fun data key mapFunc
-    data group (key \cropTilde) mapFunc array
+@ 'group' 'groupCount' each method
+    tp;method = fun data rest
+        if (rest,length == 0)
+            'at least one grouping property/function expected' \Error throw
+        result = @
+        groupNames = @
+        lastIndex = rest,length - 1
+        groupFunc = fun d i
+            p = \cropTilde rest;i
+            if (method == 'groupCount' && (i == lastIndex))
+                d groupCount p
+            | else
+                d group p
+            | each kv
+                groupNames;i = kv,0
+                if (i == lastIndex)
+                    result ~push (groupNames array <~push kv,1)
+                | else
+                    \groupFunc kv,1 (i + 1)
+        \groupFunc data 0
+        result
 
 // facet
 tp,facet = fun data key mapFunc
