@@ -110,6 +110,10 @@ capitalize = fun s
 camelToKebab = fun s
     s ~replace &/[A-Z]/g [+ '-'(a toLowerCase)]
 
+// cropTilde
+cropTilde = fun s
+    s isString && (s,0 == '~') ? (s ~slice 1) s
+
 // min/max of array where ignore undefined and null elements
 minVal = fun arr
     mn = Infinity
@@ -424,7 +428,7 @@ colorRamp = fun schemeFun width height
 // add to target
 addToTarget = fun content target
     if target
-        typeof target == 'string' ? (select target) target ~append content
+        target isString ? (select target) target ~append content
     content
 
 // ========== constructor ==========
@@ -2212,26 +2216,24 @@ tp,lookup = fun data key mapFunc
         data each d i
             obj : (\key d i data) = \mf d i data
     | else
+        key = key \cropTilde
         data each d i
             obj : d;key = \mf d i data
     obj
 
 // group
 tp : 'group' = fun data key mapFunc
-    data group key mapFunc array
+    data group (key \cropTilde) mapFunc array
 
 // facet
-tp : 'facet' = fun data key mapFunc
+tp,facet = fun data key mapFunc
     container = $div
-    data group key
+    data group (key \cropTilde)
         fun grp name index
             plotObj = new tp
             mapFunc ~'call' plotObj grp name index
             plotObj ~plot container
-    # plot
-        fun target
-            this,container \addToTarget target
-    | attach container
+    # plot [container \addToTarget a] attach container
 
 
 // ========== update ==========
