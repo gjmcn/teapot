@@ -431,6 +431,7 @@ addToTarget = fun content target
         target isString ? (select target) target ~append content
     content
 
+    
 // ========== constructor ==========
 
 tp = class
@@ -2222,20 +2223,26 @@ tp,lookup = fun data key mapFunc
             obj : d;key = \mf d i data
     obj
 
-// group
+// group, groupCount
 @ 'group' 'groupCount' each method
     tp;method = fun data rest
-        if (rest,length == 0)
+        nDim = rest,length
+        if (nDim == 0)
             'at least one grouping property/function expected' \Error throw
         result = @
         groupNames = @
-        lastIndex = rest,length - 1
-        groupFunc = fun d i
+        lastIndex = nDim - 1
+        props = @
+        do nDim i
             p = \cropTilde rest;i
+            p isFunction ? (data ~'map' p) (data pick p) some isInfOrNaN ?
+                nonFiniteMsg \Error throw
+            props;i = p
+        groupFunc = fun d i
             if (method == 'groupCount' && (i == lastIndex))
-                d groupCount p
+                d groupCount props;i
             | else
-                d group p
+                d group props;i
             | each kv
                 groupNames;i = kv,0
                 if (i == lastIndex)
@@ -2255,6 +2262,74 @@ tp,facet = fun data key mapFunc
             plotObj ~plot container
     # plot [container \addToTarget a] attach container
 
+// bin, binCount
+@ 'bin' 'binCount' each method
+
+    tp;method = fun data rest
+        nDim = rest,length / 2
+        if (nDim == 0 || (nDim isInteger !))
+            'unexpected number of arguments' \Error throw
+        
+        // check values and limits
+        accessors = @
+        limits = @
+        lowers = @
+        do nDim i
+            p = rest : (2 * i) \cropTilde
+            accessors;i = p isFunction ? p [a;p]
+            v = data ~'map' accessors;i
+            if (v some [a isFinite !])
+                'can only bin finite, numeric values' \Error throw
+            mn = v min
+            mx = v max
+            q = rest : (2 * i + 1)
+            if (q isFunction)
+                q = \q mn mx v
+            q = q order
+            if (q isArray ! || (q,length < 2) || (q some [a isFinite !])
+            | (q,0 > mn) || (q : (q,length - 1) < mx))
+                'invalid bin limits' \Error throw
+            lowers;i = q ~shift
+            limits;i = q
+
+        // binning
+        result = @
+        binNames = @
+        binFunc = fun d i
+            cf = [accessors ~(i) a - b]
+            if (method == 'binCount' && (i == (nDim - 1)))
+                d binCount limits;i cf
+            | else
+                d bin limits;i cf
+            | each kv
+                if (kv,1 isArray && kv,1,length || (kv,1 isNumber && kv,1))
+                    binNames;i = kv,0
+                    if (i == (nDim - 1))
+                        result ~push (binNames array <~push kv,1)
+                    | else
+                        \binFunc kv,1 (i + 1)
+        \binFunc data 0
+
+        // replace upper bin limits with full bin info
+        result each row
+            nDim do i
+                limits;i each lim j
+                    if (row;i \equalTo lim)
+                        lowerLim = j ? (limits;i : (j - 1)) lowers;i
+                        row;i = 
+                            # 'lower' lowerLim
+                            | 'upper' lim
+                            | 'middle' (lowerLim + lim / 2)
+                            | 'range' (lim - lowerLim) 
+                        stop
+        result
+    
+// range, linSpace
+tp,range = fun mn mx step
+    mn to mx step
+tp : 'linSpace' = fun mn mx n
+    n ?= 10
+    mn linSpace mx n
 
 // ========== update ==========
 
