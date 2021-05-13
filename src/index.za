@@ -2255,11 +2255,10 @@ tp,lookup = fun data key mapFunc
 // facet
 tp,facet = fun data key mapFunc
     container = $div
-    data group (key \cropTilde)
-        fun grp name index
-            plotObj = new tp
-            mapFunc ~'call' plotObj grp name index
-            plotObj ~plot container
+    tp ~'group' data key each row index
+        plotObj = new tp
+        mapFunc ~'call' plotObj row,1 row,0 index
+        plotObj ~plot container
     # plot [container \addToTarget a] attach container
 
 // bin, binCount
