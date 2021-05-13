@@ -2110,6 +2110,12 @@ tp :: 'each' = fun d f
     d ~forEach f this
     this
 
+// layer
+tp :: 'layer' = fun data key mapFunc
+    tp ~'group' data key each row index
+        mapFunc ~'call' this row,1 row,0 index
+    this
+
 // mark methods
 markNames each name
     tp :: name = fun rest
@@ -2133,7 +2139,7 @@ markNames each name
 // ========== static methods ==========
 
 // methods that can be used as instance or static
-array markNames 'option' 'data' 'state' 'each' each name
+array markNames 'option' 'data' 'state' 'each' 'layer' each name
     tp;name = fun rest
         po = new tp
         po;name ~'apply' po rest
