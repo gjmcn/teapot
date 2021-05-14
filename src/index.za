@@ -2146,68 +2146,92 @@ array markNames 'option' 'data' 'state' 'each' 'layer' each name
         po
 
 // stack
-tp,stack = fun data ops
-    level groupBy stack #= ops
-    offset <- 'none'
-    ord = ops : 'order' ?? 'none' 
-    missing <- 'throw'
-    if (data \isArrayOfObjects !) 
-        'array of objects/arrays expected' \Error throw
-    if (data,length == 0)
-        'empty data array' \Error throw
-    if (level isNullish || (groupBy isNullish) || (stack isNullish))
-        'level, groupBy and stack options are required' \Error throw
-    data each d
-        if ((d;level   \isInfOrNaN) ||
-        |   (d;groupBy \isInfOrNaN) ||
-        |   (d;stack   \isInfOrNaN))
-            nonFiniteMsg \Error throw
-    if (missing == 'skip')
-        data = data filter
-            fun d
-                d;level isNullish ||
-                | (d;groupBy isNullish) ||
-                | (d;stack isNullish) !
+scope
+    stackHelper = fun data isHorizontal ops
+        groupByDim vbleDim @= isHorizontal ? (@ 'y' 'x') (@ 'x' 'y')
+        groupBy = ops;groupByDim \cropTilde
+        vble = ops;vbleDim \cropTilde
+        stack #= ops \cropTilde
+        offset <- 'none'
+        ord = ops : 'order' ?? 'none'
+        missing <- 'throw'
+        if (data \isArrayOfObjects !)
+            'array of objects/arrays expected' \Error throw
         if (data,length == 0)
-            allMissingMsg \Error throw
-    | else  // 'throw' or 'zero'
-        data each d
-            if (d;level   isNullish) (+ 'missing "'level'" value' \Error throw)
-            if (d;groupBy isNullish) (+ 'missing "'groupBy'" value' \Error throw)
-            if (d;stack   isNullish && (missing != 'zero'))
-                + 'missing "'stack'" value' \Error throw
-    groupNames = @
-    levelNames = new Set (data pick level) array
-    wideData = data group groupBy
-        fun arr gName
-            groupNames ~push gName
-            if (new Set (arr pick level) : 'size' < arr,length)
-                + 'duplicate 'level'-'groupBy' pair in data' \Error throw
-            obj = #
-            arr each row
-                obj : row;level = row;stack
-            obj
-    | ~values array
-    validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
-    validOffset = @@ 'expand' 'diverging' 'none' 'silhouette' 'wiggle'
-    levels = d3 ~stack
-    | ~keys levelNames
-    | ~value [a;b ?? 0]  // possible null/undef if missing is 'zero' or if missing rows of data
-    | ~'order'
-        if (ord == 'asc')  d3,stackOrderAscending
-        |  (ord == 'desc') d3,stackOrderDescending
-        |  (validOrder ~has ord) (d3 : (+ 'stackOrder'(\capitalize ord)))
-        |  else ('invalid stack order' \Error throw)
-    | ~offset
-        if (validOffset ~has offset) (d3 : (+ 'stackOffset'(\capitalize offset)))
-        |  else ('invalid stack offset' \Error throw)
-    | call wideData
-    | map row i
-        #
-        | name levelNames;i
-        | 'lower' (row map pair (pair,0))
-        | 'upper' (row map pair (pair,1))
-    # attach groupNames levels
+            'empty data array' \Error throw
+        if (groupBy isNullish || (vble isNullish) || (stack isNullish))
+            'x, y and stack options are required' \Error throw
+        if (data some [
+        | a;groupBy \isInfOrNaN ||
+        | (a;vble \isInfOrNaN)  ||
+        | (a;stack \isInfOrNaN)])
+            nonFiniteMsg \Error throw    
+        if (missing == 'skip')
+            data = data filter
+                fun d
+                    d;groupBy  isNullish ||
+                    | (d;vble  isNullish) ||
+                    | (d;stack isNullish) !
+            if (data,length == 0)
+                allMissingMsg \Error throw
+        | else  // 'throw' or 'zero'
+            data each d i
+                if (d;groupBy isNullish)
+                    + 'missing "'groupByDim'" value' \Error throw
+                if (d;vble isNullish && (missing != 'zero'))
+                    + 'missing "'vbleDim'" value' \Error throw
+                if (d;stack isNullish)
+                    + 'missing "'stack'" value' \Error throw
+        groupNames = @
+        stackNames = new Set (data pick stack) array
+        wideData = data group groupBy
+            fun arr gName
+                groupNames ~push gName
+                if (new Set (arr pick stack) : 'size' < arr,length)
+                    + 'duplicate 'groupByDim'-stack pair in data' \Error throw
+                obj = #
+                arr each row i
+                    obj : row;stack = row;vble
+                obj
+        | ~values array
+        validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
+        validOffset = @@ 'expand' 'diverging' 'none' 'silhouette' 'wiggle'
+        levels = d3 ~stack
+        | ~keys stackNames
+        | ~value [a;b ?? 0]  // possible null/undef if missing is 'zero' or if missing rows of data
+        | ~'order'
+            if (ord == 'asc')  d3,stackOrderAscending
+            |  (ord == 'desc') d3,stackOrderDescending
+            |  (validOrder ~has ord) (d3 : (+ 'stackOrder'(\capitalize ord)))
+            |  else ('invalid stack order' \Error throw)
+        | ~offset
+            if (validOffset ~has offset) (d3 : (+ 'stackOffset'(\capitalize offset)))
+            |  else ('invalid stack offset' \Error throw)
+        | call wideData
+        vbleDimDim = vbleDim + vbleDim
+        if ops,rows
+            result = @
+            levels each st i
+                st each grp j
+                    result ~push
+                        # (groupByDim) groupNames;j
+                        | (vbleDimDim) grp,0
+                        | (vbleDim) grp,1
+                        | fill stackNames;i
+        | else
+            result = # (groupByDim) (@) (vbleDimDim) (@) (vbleDim) (@) fill (@)
+            levels each st i
+                st each grp j
+                    result;groupByDim ~push groupNames;j
+                    result;vbleDimDim ~push grp,0
+                    result;vbleDim    ~push grp,1
+                    result,fill       ~push stackNames;i
+        result
+
+    tp,vStack = fun data ops
+        \stackHelper data false ops
+    tp,hStack = fun data ops
+        \stackHelper data true ops
 
 // lookup
 tp,lookup = fun data key mapFunc
