@@ -2283,9 +2283,14 @@ tp,lookup = fun data key mapFunc
         result
 
 // facet
-tp,facet = fun data key mapFunc
+tp,facet = fun rest
+    if (rest,length > 2)
+        data = tp ~'group' rest,0 rest,1
+        mapFunc = rest,2
+    | else
+        data mapFunc @= rest
     container = $div
-    tp ~'group' data key each row index
+    data each row index
         plotObj = new tp
         mapFunc ~'call' plotObj row,1 row,0 index
         plotObj ~plot container
@@ -2355,10 +2360,10 @@ tp,facet = fun data key mapFunc
     
 // range, linSpace
 tp,range = fun mn mx step
-    mn to mx step
+    mn to mx step array
 tp : 'linSpace' = fun mn mx n
     n ?= 10
-    mn linSpace mx n
+    mn linSpace mx n array
 
 // ========== update ==========
 
