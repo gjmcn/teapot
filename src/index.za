@@ -110,7 +110,7 @@ capitalize = fun s
 camelToKebab = fun s
     s ~replace &/[A-Z]/g [+ '-'(a toLowerCase)]
 
-// cropTilde
+// crop tilde
 cropTilde = fun s
     s isString && (s,0 == '~') ? (s ~slice 1) s
 
@@ -2110,10 +2110,10 @@ tp :: 'each' = fun d f
     d ~forEach f this
     this
 
-// layer
-tp :: 'layer' = fun data key mapFunc
+// layer method
+tp :: 'layer' = fun data key f
     tp ~'group' data key each row index
-        mapFunc ~'call' this row,1 row,0 index
+        f ~'call' this row,1 row,0 index
     this
 
 // mark methods
@@ -2147,7 +2147,7 @@ array markNames 'option' 'data' 'state' 'each' 'layer' each name
 
 // stack
 scope
-    stackHelper = fun data isHorizontal ops
+    stackData = fun data isHorizontal ops
         groupByDim vbleDim @= isHorizontal ? (@ 'y' 'x') (@ 'x' 'y')
         groupBy = ops;groupByDim \cropTilde
         vble = ops;vbleDim \cropTilde
@@ -2177,11 +2177,11 @@ scope
         | else  // 'throw' or 'zero'
             data each d i
                 if (d;groupBy isNullish)
-                    + 'missing "'groupByDim'" value' \Error throw
+                    + 'missing 'groupByDim' value' \Error throw
                 if (d;vble isNullish && (missing != 'zero'))
-                    + 'missing "'vbleDim'" value' \Error throw
+                    + 'missing 'vbleDim' value' \Error throw
                 if (d;stack isNullish)
-                    + 'missing "'stack'" value' \Error throw
+                    + 'missing 'stack' value' \Error throw
         groupNames = @
         stackNames = new Set (data pick stack) array
         wideData = data group groupBy
@@ -2190,7 +2190,7 @@ scope
                 if (new Set (arr pick stack) : 'size' < arr,length)
                     + 'duplicate 'groupByDim'-stack pair in data' \Error throw
                 obj = #
-                arr each row i
+                arr each row
                     obj : row;stack = row;vble
                 obj
         | ~values array
@@ -2229,9 +2229,9 @@ scope
         result
 
     tp,vStack = fun data ops
-        \stackHelper data false ops
+        \stackData data false ops
     tp,hStack = fun data ops
-        \stackHelper data true ops
+        \stackData data true ops
 
 // lookup
 tp,lookup = fun data key mapFunc
@@ -2294,7 +2294,7 @@ tp,facet = fun rest
         plotObj = new tp
         mapFunc ~'call' plotObj row,1 row,0 index
         plotObj ~plot container
-    # plot [container \addToTarget a] attach container
+    # plot [container \addToTarget a]
 
 // bin, binCount
 @ 'bin' 'binCount' each method
@@ -2311,7 +2311,7 @@ tp,facet = fun rest
         do nDim i
             p = rest : (2 * i) \cropTilde
             accessors;i = p isFunction ? p [a;p]
-            v = data ~'map' accessors;i
+            v = data map e (accessors ~(i) e)  // accessor not passed index and data
             if (v some [a isFinite !])
                 'can only bin finite, numeric values' \Error throw
             mn = v min
@@ -2319,12 +2319,12 @@ tp,facet = fun rest
             q = rest : (2 * i + 1)
             if (q isFunction)
                 q = \q mn mx v
-            q = q order
             if (q isArray ! || (q,length < 2) || (q some [a isFinite !])
-            | (q,0 > mn) || (q : (q,length - 1) < mx))
+            | (q min > mn) || (q max < mx))
                 'invalid bin limits' \Error throw
+            q = q order
             lowers;i = q ~shift
-            limits;i = q
+            limits;i = q     
 
         // binning
         result = @
@@ -2344,26 +2344,29 @@ tp,facet = fun rest
                         \binFunc kv,1 (i + 1)
         \binFunc data 0
 
-        // replace upper bin limits with full bin info
+        // replace upper bin limits with bin info
+        binInfo = @
+        nDim do i
+            m = ##
+            limits;i each lim j
+                lowerLim = j ? (limits;i : (j - 1)) lowers;i
+                m ~set lim
+                    # 'lower' lowerLim
+                    | 'upper' lim
+                    | 'middle' (lowerLim + lim / 2)
+                    | 'range' (lim - lowerLim) 
+            binInfo;i = m
         result each row
             nDim do i
-                limits;i each lim j
-                    if (row;i \equalTo lim)
-                        lowerLim = j ? (limits;i : (j - 1)) lowers;i
-                        row;i = 
-                            # 'lower' lowerLim
-                            | 'upper' lim
-                            | 'middle' (lowerLim + lim / 2)
-                            | 'range' (lim - lowerLim) 
-                        stop
+                row;i = # assign (binInfo;i ~get row;i)
         result
     
 // range, linSpace
 tp,range = fun mn mx step
     mn to mx step array
 tp : 'linSpace' = fun mn mx n
-    n ?= 10
     mn linSpace mx n array
+
 
 // ========== update ==========
 
