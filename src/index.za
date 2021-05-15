@@ -2111,8 +2111,15 @@ tp :: 'each' = fun d f
     this
 
 // layer method
-tp :: 'layer' = fun data key f
-    tp ~'group' data key each row index
+tp :: 'layer' = fun rest
+    if (rest,length > 2)
+        data = tp ~'group' rest,0 rest,1
+        f = rest,2
+    | else
+        data f @= rest
+        if (data isArray !)
+            'array expected' \Error throw
+    data each row index
         f ~'call' this row,1 row,0 index
     this
 
@@ -2256,6 +2263,8 @@ tp,lookup = fun data key mapFunc
 // group, groupCount
 @ 'group' 'groupCount' each method
     tp;method = fun data rest
+        if (data isArray !)
+            'array expected' \Error throw
         nDim = rest,length
         if (nDim == 0)
             'at least one grouping property/function expected' \Error throw
@@ -2289,6 +2298,8 @@ tp,facet = fun rest
         mapFunc = rest,2
     | else
         data mapFunc @= rest
+        if (data isArray !)
+            'array expected' \Error throw
     container = $div
     data each row index
         plotObj = new tp
@@ -2300,6 +2311,9 @@ tp,facet = fun rest
 @ 'bin' 'binCount' each method
 
     tp;method = fun data rest
+
+        if (data isArray !)
+            'array expected' \Error throw
         nDim = rest,length / 2
         if (nDim == 0 || (nDim isInteger !))
             'unexpected number of arguments' \Error throw
