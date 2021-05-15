@@ -2368,7 +2368,7 @@ tp,facet = fun rest
                     # 'lower' lowerLim
                     | 'upper' lim
                     | 'middle' (lowerLim + lim / 2)
-                    | 'range' (lim - lowerLim) 
+                    | 'width' (lim - lowerLim) 
             binInfo;i = m
         result each row
             nDim do i
