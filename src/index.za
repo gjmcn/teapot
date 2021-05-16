@@ -2155,6 +2155,8 @@ array markNames 'option' 'data' 'state' 'each' 'layer' each name
 // stack
 scope
     stackData = fun data isHorizontal ops
+
+        // process arguments
         groupByDim vbleDim @= isHorizontal ? (@ 'y' 'x') (@ 'x' 'y')
         groupBy = ops;groupByDim \cropTilde
         vble = ops;vbleDim \cropTilde
@@ -2162,53 +2164,60 @@ scope
         offset <- 'none'
         ord = ops : 'order' ?? 'none'
         missing <- 'throw'
-        isCount = vble isNullish
+        isGroupBy = groupBy isNullish !
+        isVble = vble isNullish !
         if (data \isArrayOfObjects !)
             'array of objects/arrays expected' \Error throw
         if (data,length == 0)
             'empty data array' \Error throw
-        if (groupBy isNullish || (stack isNullish))
-            'x, y and stack options are required' \Error throw
+        if (stack isNullish)
+            'stack option is required' \Error throw
         if (data some [
-        | a;groupBy \isInfOrNaN ||
-        | (isCount ! && (a;vble \isInfOrNaN)) ||
+        | (isGroupBy && (a;groupBy \isInfOrNaN)) ||
+        | (isVble && (a;vble \isInfOrNaN)) ||
         | (a;stack \isInfOrNaN)])
             nonFiniteMsg \Error throw    
         if (missing == 'skip')
             data = data filter
                 fun d
-                    d;groupBy  isNullish ||
-                    | (isCount ! && (d;vble  isNullish)) ||
-                    | (d;stack isNullish) !
+                    (isGroupBy && (d;groupBy isNullish) ||
+                    | (isVble && (d;vble isNullish)) ||
+                    | (d;stack isNullish)) !
             if (data,length == 0)
                 allMissingMsg \Error throw
         | else  // 'throw' or 'zero'
             data each d i
-                if (d;groupBy isNullish)
+                if (isGroupBy && (d;groupBy isNullish))
                     + 'missing 'groupByDim' value' \Error throw
-                if (isCount ! && (d;vble isNullish) && (missing != 'zero'))
+                if (isVble && (d;vble isNullish) && (missing != 'zero'))
                     + 'missing 'vbleDim' value' \Error throw
                 if (d;stack isNullish)
                     + 'missing 'stack' value' \Error throw
+        
+        // get wide data for d3.stack
         groupNames = @
-        stackNames = new Set (data pick stack) array
-        wideData = data group groupBy
-            fun arr gName
-                groupNames ~push gName
-                if (isCount ! && (new Set (arr pick stack) : 'size' < arr,length))
-                    + 'duplicate 'groupByDim'-stack pair in data' \Error throw
-                obj = #
-                if isCount
-                    arr groupCount stack
-                        fun subCount subName
-                            obj : subName = subCount 
-                | else
-                    arr each row
-                        obj : row;stack = row;vble
-                obj
+        getWideRow = fun gArray gName
+            groupNames ~push gName
+            obj = #
+            if isVble  // already grouped
+                gArray each row
+                    obj : row;stack = row;vble
+            | else  // count
+                gArray groupCount stack
+                    fun subCount subName
+                        obj : subName = subCount 
+            obj
+        wideData = 
+            if isGroupBy
+                data group groupBy getWideRow
+            | else
+                data \getWideRow
         | ~values array
+
+        // apply d3.stack
         validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
         validOffset = @@ 'expand' 'diverging' 'none' 'silhouette' 'wiggle'
+        stackNames = new Set (data pick stack) array
         levels = d3 ~stack
         | ~keys stackNames
         | ~value [a;b ?? 0]  // possible null/undef if missing is 'zero' or if missing rows of data
@@ -2221,24 +2230,29 @@ scope
             if (validOffset ~has offset) (d3 : (+ 'stackOffset'(\capitalize offset)))
             |  else ('invalid stack offset' \Error throw)
         | call wideData
+
+        // construct result from stacked data
         vbleDimDim = vbleDim + vbleDim
         if ops,rows
             result = @
             levels each st i
                 st each grp j
-                    result ~push
-                        # (groupByDim) groupNames;j
-                        | (vbleDimDim) grp,0
+                    obj = 
+                        # (vbleDimDim) grp,0
                         | (vbleDim) grp,1
                         | fill stackNames;i
+                    if isGroupBy
+                        obj;groupByDim = groupNames;j
+                    result ~push
         | else
             result = # (groupByDim) (@) (vbleDimDim) (@) (vbleDim) (@) fill (@)
             levels each st i
                 st each grp j
-                    result;groupByDim ~push groupNames;j
                     result;vbleDimDim ~push grp,0
                     result;vbleDim    ~push grp,1
                     result,fill       ~push stackNames;i
+                    if isGroupBy
+                        result;groupByDim ~push groupNames;j
         result
 
     tp,vStack = fun data ops
