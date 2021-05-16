@@ -2362,17 +2362,21 @@ tp,facet = fun rest
         binInfo = @
         nDim do i
             m = ##
+            suffix = nDim > 1 ? (+ '_'i) '' 
             limits;i each lim j
                 lowerLim = j ? (limits;i : (j - 1)) lowers;i
                 m ~set lim
-                    # 'lower' lowerLim
-                    | 'upper' lim
-                    | 'middle' (lowerLim + lim / 2)
-                    | 'range' (lim - lowerLim) 
+                    # (+ 'lower'suffix)  lowerLim
+                    | (+ 'upper'suffix)  lim
+                    | (+ 'middle'suffix) (lowerLim + lim / 2)
+                    | (+ 'range'suffix)  (lim - lowerLim) 
             binInfo;i = m
-        result each row
+        result each row j
+            newRow = #
             nDim do i
-                row;i = # assign (binInfo;i ~get row;i)
+                newRow assign (binInfo;i ~get row;i)
+            newRow : (method == 'binCount' ? 'count' 'bin') = row;nDim
+            result;j = newRow
         result
     
 // range, linSpace
