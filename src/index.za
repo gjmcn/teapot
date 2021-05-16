@@ -2120,7 +2120,7 @@ tp :: 'layer' = fun rest
         if (data isArray !)
             'array expected' \Error throw
     data each row index
-        f ~'call' this row,1 row,0 index
+        f ~'call' this (row : 'group') row,name index
     this
 
 // mark methods
@@ -2263,11 +2263,14 @@ tp,lookup = fun data key mapFunc
 // group, groupCount
 @ 'group' 'groupCount' each method
     tp;method = fun data rest
+        
         if (data isArray !)
             'array expected' \Error throw
         nDim = rest,length
         if (nDim == 0)
             'at least one grouping property/function expected' \Error throw
+        
+        // group
         result = @
         groupNames = @
         lastIndex = nDim - 1
@@ -2289,6 +2292,14 @@ tp,lookup = fun data key mapFunc
                 | else
                     \groupFunc kv,1 (i + 1)
         \groupFunc data 0
+        
+        // replace each row of result with an object
+        result each row j
+            newRow = #
+            nDim do i
+                newRow : (nDim > 1 ? (+ 'name_'i) 'name') = row;i
+            newRow : (method == 'groupCount' ? 'count' 'group') = row;nDim
+            result;j = newRow
         result
 
 // facet
@@ -2303,7 +2314,7 @@ tp,facet = fun rest
     container = $div
     data each row index
         plotObj = new tp
-        mapFunc ~'call' plotObj row,1 row,0 index
+        mapFunc ~'call' plotObj (row : 'group') row,name index
         plotObj ~plot container
     # plot [container \addToTarget a]
 
@@ -2358,7 +2369,7 @@ tp,facet = fun rest
                         \binFunc kv,1 (i + 1)
         \binFunc data 0
 
-        // replace upper bin limits with bin info
+        // replace each row of result with an object
         binInfo = @
         nDim do i
             m = ##
