@@ -2162,22 +2162,23 @@ scope
         offset <- 'none'
         ord = ops : 'order' ?? 'none'
         missing <- 'throw'
+        isCount = vble isNullish
         if (data \isArrayOfObjects !)
             'array of objects/arrays expected' \Error throw
         if (data,length == 0)
             'empty data array' \Error throw
-        if (groupBy isNullish || (vble isNullish) || (stack isNullish))
+        if (groupBy isNullish || (stack isNullish))
             'x, y and stack options are required' \Error throw
         if (data some [
         | a;groupBy \isInfOrNaN ||
-        | (a;vble \isInfOrNaN)  ||
+        | (isCount ! && (a;vble \isInfOrNaN)) ||
         | (a;stack \isInfOrNaN)])
             nonFiniteMsg \Error throw    
         if (missing == 'skip')
             data = data filter
                 fun d
                     d;groupBy  isNullish ||
-                    | (d;vble  isNullish) ||
+                    | (isCount ! && (d;vble  isNullish)) ||
                     | (d;stack isNullish) !
             if (data,length == 0)
                 allMissingMsg \Error throw
@@ -2185,7 +2186,7 @@ scope
             data each d i
                 if (d;groupBy isNullish)
                     + 'missing 'groupByDim' value' \Error throw
-                if (d;vble isNullish && (missing != 'zero'))
+                if (isCount ! && (d;vble isNullish) && (missing != 'zero'))
                     + 'missing 'vbleDim' value' \Error throw
                 if (d;stack isNullish)
                     + 'missing 'stack' value' \Error throw
@@ -2194,11 +2195,16 @@ scope
         wideData = data group groupBy
             fun arr gName
                 groupNames ~push gName
-                if (new Set (arr pick stack) : 'size' < arr,length)
+                if (isCount ! && (new Set (arr pick stack) : 'size' < arr,length))
                     + 'duplicate 'groupByDim'-stack pair in data' \Error throw
                 obj = #
-                arr each row
-                    obj : row;stack = row;vble
+                if isCount
+                    arr groupCount stack
+                        fun subCount subName
+                            obj : subName = subCount 
+                | else
+                    arr each row
+                        obj : row;stack = row;vble
                 obj
         | ~values array
         validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
