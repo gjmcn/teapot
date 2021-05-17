@@ -2164,8 +2164,11 @@ scope
         offset <- 'none'
         ord = ops : 'order' ?? 'none'
         missing <- 'throw'
+        binLimits #= ops
         isGroupBy = groupBy isNullish !
+        isBinning = binLimits isNullish !
         isVble = vble isNullish !
+        binProps = @ 'lower' 'upper' 'middle' 'range'
         if (data \isArrayOfObjects !)
             'array of objects/arrays expected' \Error throw
         if (data,length == 0)
@@ -2195,11 +2198,11 @@ scope
                     + 'missing 'stack' value' \Error throw
         
         // get wide data for d3.stack
-        groupNames = @
-        getWideRow = fun gArray gName
-            groupNames ~push gName
+        groupInfo = @
+        getWideRow = fun gArray gInfo
+            groupInfo ~push gInfo
             obj = #
-            if isVble  // already grouped
+            if isVble
                 gArray each row
                     obj : row;stack = row;vble
             | else  // count
@@ -2209,10 +2212,13 @@ scope
             obj
         wideData = 
             if isGroupBy
-                data group groupBy getWideRow
+                if isBinning
+                    tp ~'bin' data groupBy binLimits map row
+                        \getWideRow (row : 'bin') row
+                | else
+                    data group groupBy getWideRow ~values array
             | else
-                data \getWideRow
-        | ~values array
+                data \getWideRow @
 
         // apply d3.stack
         validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
@@ -2242,17 +2248,31 @@ scope
                         | (vbleDim) grp,1
                         | fill stackNames;i
                     if isGroupBy
-                        obj;groupByDim = groupNames;j
-                    result ~push
+                        if isBinning
+                            binProps each p
+                                obj;p = groupInfo;j;p
+                        | else
+                            obj;groupByDim = groupInfo;j
+                    result ~push obj
         | else
-            result = # (groupByDim) (@) (vbleDimDim) (@) (vbleDim) (@) fill (@)
+            result = # (vbleDimDim) (@) (vbleDim) (@) fill (@)
+            if isGroupBy
+                if isBinning
+                    binProps each p
+                        result;p = @
+                | else
+                    result;groupByDim = @
             levels each st i
                 st each grp j
                     result;vbleDimDim ~push grp,0
                     result;vbleDim    ~push grp,1
                     result,fill       ~push stackNames;i
                     if isGroupBy
-                        result;groupByDim ~push groupNames;j
+                        if isBinning
+                            binProps each p
+                                result;p ~push groupInfo;j;p
+                        | else
+                            result;groupByDim ~push groupInfo;j
         result
 
     tp,vStack = fun data ops
