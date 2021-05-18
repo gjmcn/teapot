@@ -2160,7 +2160,7 @@ scope
         groupByDim vbleDim @= isHorizontal ? (@ 'y' 'x') (@ 'x' 'y')
         groupBy = ops;groupByDim \cropTilde
         vble = ops;vbleDim \cropTilde
-        stack #= ops \cropTilde
+        stack = ops,stack \cropTilde
         offset <- 'none'
         ord = ops : 'order' ?? 'none'
         missing <- 'throw'
@@ -2168,6 +2168,7 @@ scope
         isGroupBy = groupBy isNullish !
         isBinning = binLimits isNullish !
         isVble = vble isNullish !
+        returnRows = ops,rows
         binProps = @ 'lower' 'upper' 'middle' 'range'
         if (data \isArrayOfObjects !)
             'array of objects/arrays expected' \Error throw
@@ -2189,7 +2190,7 @@ scope
             if (data,length == 0)
                 allMissingMsg \Error throw
         | else  // 'throw' or 'zero'
-            data each d i
+            data each d
                 if (isGroupBy && (d;groupBy isNullish))
                     + 'missing 'groupByDim' value' \Error throw
                 if (isVble && (d;vble isNullish) && (missing != 'zero'))
@@ -2239,7 +2240,7 @@ scope
 
         // construct result from stacked data
         vbleDimDim = vbleDim + vbleDim
-        if ops,rows
+        if returnRows
             result = @
             levels each st i
                 st each grp j
