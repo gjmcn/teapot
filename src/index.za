@@ -1347,8 +1347,12 @@ tp :: 'plot' = fun target
 
         // ========== xScale, yScale, xTransform, yTransform ==========
 
-        xScale = [a - xMin / xRange * paneWidth]
-        yScale = [a - yMin / yRange * paneHeight -]
+        xScale = \op 'xReverse' ?
+        | [xMax - a / xRange * paneWidth]
+        | [a - xMin / xRange * paneWidth]
+        yScale = \op 'yReverse' ?
+        | [yMax - a / yRange * paneHeight -]
+        | [a - yMin / yRange * paneHeight -]
         xTransform = fun val
             if (val isNumber ! && dataMaps,x,size) 
                 val = dataMaps,x ~get val

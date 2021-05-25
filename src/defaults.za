@@ -6,7 +6,7 @@ export defOptions defChannels defShapeScheme
 // option defaults
 defOptions = #
 
-// top-level
+// basic
 | plot true
 | setPaneSize false
 | width 260
