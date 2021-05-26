@@ -1345,12 +1345,14 @@ tp :: 'plot' = fun target
             'pane height is less than or equal to 0' \Error throw
 
 
-        // ========== xScale, yScale, xTransform, yTransform ==========
+        // ========== reverse, scale, transform ==========
 
-        xScale = \op 'xReverse' ?
+        xReverse = \op 'xReverse'
+        yReverse = \op 'yReverse'
+        xScale = xReverse ?
         | [xMax - a / xRange * paneWidth]
         | [a - xMin / xRange * paneWidth]
-        yScale = \op 'yReverse' ?
+        yScale = yReverse ?
         | [yMax - a / yRange * paneHeight -]
         | [a - yMin / yRange * paneHeight -]
         xTransform = fun val
@@ -1823,13 +1825,13 @@ tp :: 'plot' = fun target
                     wi = \w i + abs
                     hi = \h i + abs
                     if mk,corner
-                        xiLeft = xi
-                        yiTop  = yi - hi
-                        cxi = xi + (wi / 2)
-                        cyi = yi + yiTop / 2
+                        xiMin = xReverse ? (xi - wi) xi
+                        yiMin = yReverse ? yi (yi - hi)
+                        cxi = xiMin + (wi / 2)
+                        cyi = yiMin + (hi / 2)
                     | else  // centered
-                        xiLeft = xi - (wi / 2)
-                        yiTop  = yi - (hi / 2)
+                        xiMin = xi - (wi / 2)
+                        yiMin = yi - (hi / 2)
                         cxi = xi
                         cyi = yi
                     if (mk,subplot isNullish !)  // subplot
@@ -1839,12 +1841,12 @@ tp :: 'plot' = fun target
                             | _outerContainer outerContainer
                         mk,subplot ~'call' sp (channels ~subplot i) i
                         \insertMark (sp ~plot) i
-                        | attr 'transform' (+ 'translate('xiLeft' 'yiTop')')
+                        | attr 'transform' (+ 'translate('xiMin' 'yiMin')')
                         | \finishMark mk channels i 'subplot'
                     | else  // standard rect
                         elm = $rect
-                        | attr 'x' xiLeft
-                        | attr 'y' yiTop
+                        | attr 'x' xiMin
+                        | attr 'y' yiMin
                         | attr 'width' wi
                         | attr 'height' hi
                         | \setUnlessNullish 'rx' (channels ~cornerRadius i)
@@ -1858,8 +1860,8 @@ tp :: 'plot' = fun target
                                 __tp__,widthFunc  = fun v (v + abs)
                                 __tp__,heightFunc = fun v (v + abs)
                             | else
-                                __tp__,widthFunc  = fun v (v / xRange * paneWidth)
-                                __tp__,heightFunc = fun v (v / yRange * paneHeight)
+                                __tp__,widthFunc  = fun v (v / xRange * paneWidth  abs)
+                                __tp__,heightFunc = fun v (v / yRange * paneHeight abs)
                             updatable ~push elm
                         \insertMark elm i
                         | \finishMark mk channels i
@@ -2010,7 +2012,8 @@ tp :: 'plot' = fun target
                         + 'translate('
                         | (\xScale 0 + leftSpace)','(\yScale 0 + topSpace + paneHeight)
                         | ') scale('
-                        | (paneWidth / xRange)','(paneHeight / yRange -)')'
+                        | (paneWidth  / xRange * (xReverse ? (-1) 1))','
+                        | (paneHeight / yRange * (yReverse ? 1 (-1)))')'
                     if markUpdate,size
                         __tp__ = \basic__tp__ elm i
                         updatable ~push elm
