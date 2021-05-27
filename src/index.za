@@ -1854,8 +1854,9 @@ tp :: 'plot' = fun target
                         if markUpdate,size
                             __tp__ = \basic__tp__ elm i
                             __tp__,corner = mk,corner
-                            __tp__,width = wi               
-                            __tp__,height = hi 
+                            __tp__,width = wi       
+                            __tp__,height = hi
+                            __tp__ attach xReverse yReverse
                             if mk,pixels
                                 __tp__,widthFunc  = fun v (v + abs)
                                 __tp__,heightFunc = fun v (v + abs)
@@ -1873,7 +1874,7 @@ tp :: 'plot' = fun target
                     xxi = \xx i
                     yyi = \yy i
                     d = d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
-                        # source (@ (\x  i)  (\y i))
+                        # source (@ (\x i) (\y i))
                         | target (@ xxi yyi)
                     elm = $path
                     | attr 'd' d
@@ -2598,22 +2599,29 @@ updateElement = fun elm state
 
     // rect
     | (type == 'rect')
-        if (channels ~has 'width')
-            __tp__,width = channels ~get 'width' \__tp__,widthFunc
-            \setFrom__tp__ 'width' 'width'
-        if (channels ~has 'height')
-            __tp__,height = channels ~get 'height' \__tp__,heightFunc 
-            \setFrom__tp__ 'height' 'height'
-        if (channels ~has 'x' || (channels ~has 'width'))
-            \updateXY 'x'
-            elm ~setAttribute 'x'
-                __tp__,corner ? __tp__,x (__tp__,x - (__tp__,width / 2))
-        if (channels ~has 'y' || (channels ~has 'height'))
-            \updateXY 'y'
-            elm ~setAttribute 'y'
-                __tp__,y - (__tp__,height / (__tp__,corner ? 1 2))
-        if (channels ~has 'cornerRadius')
-            elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
+        scope
+            if (channels ~has 'width')
+                __tp__,width = channels ~get 'width' \__tp__,widthFunc
+                \setFrom__tp__ 'width' 'width'
+            if (channels ~has 'height')
+                __tp__,height = channels ~get 'height' \__tp__,heightFunc 
+                \setFrom__tp__ 'height' 'height'
+            if (channels ~has 'x' || (channels ~has 'width'))
+                \updateXY 'x'
+                x #= __tp__
+                elm ~setAttribute 'x'
+                    __tp__,corner ?
+                    | (__tp__,xReverse ? (x - __tp__,width) x)
+                    | (x - (__tp__,width / 2))
+            if (channels ~has 'y' || (channels ~has 'height'))
+                \updateXY 'y'
+                y #= __tp__
+                elm ~setAttribute 'y'
+                    __tp__,corner ?
+                    | (__tp__,yReverse ? y (y - __tp__,height))
+                    | (y - (__tp__,height / 2))
+            if (channels ~has 'cornerRadius')
+                elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
 
     // path
     | (type == 'path')
@@ -2634,7 +2642,7 @@ updateElement = fun elm state
                 elm ~setAttribute 'd' (__tp__ \dLineBand)
     
     undefined
-            
+
 // update plot(s)
 updatePlots = fun isMerge args
 
