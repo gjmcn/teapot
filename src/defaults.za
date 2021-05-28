@@ -71,6 +71,8 @@ defOptions = #
 | tickColor '#888'
 | tickOpacity 1
 | labels true
+| xReverse false
+| yReverse false
 | xTickMin false
 | xTickMax false
 | yTickMin false
