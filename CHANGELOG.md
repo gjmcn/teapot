@@ -1,3 +1,7 @@
+#### 0.3.1 &mdash; June 15, 2021
+
+* Add `call`.
+
 #### 0.3.0 &mdash; May 28, 2021
 
 * Add helpers: `tp.group`, `tp.groupCount`, `tp.bin`, `tp.binCount`, `tp.layer`, `tp.facet`, `tp.hStack`, `tp.vStack`, `tp.range`, `tp.linSpace`.

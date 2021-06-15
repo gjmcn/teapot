@@ -2118,6 +2118,10 @@ tp :: 'each' = fun d f
     d ~forEach f this
     this
 
+// call method
+tp :: 'call' = fun f
+    this <\f
+
 // layer method
 tp :: 'layer' = fun rest
     if (rest,length > 2)
@@ -2154,7 +2158,7 @@ markNames each name
 // ========== static methods ==========
 
 // methods that can be used as instance or static
-array markNames 'option' 'data' 'state' 'each' 'layer' each name
+array markNames 'option' 'data' 'state' 'each' 'call' 'layer' each name
     tp;name = fun rest
         po = new tp
         po;name ~'apply' po rest
