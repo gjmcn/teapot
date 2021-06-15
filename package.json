@@ -1,6 +1,6 @@
 {
   "name": "@gjmcn/teapot",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A JavaScript library for creating SVG plots.",
   "module": "src/index.js",
   "main": "dist/teapot.min.js",

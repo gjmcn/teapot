@@ -1,6 +1,10 @@
+#### 0.3.2 &mdash; June 15, 2021
+
+* Allow `tp.call` to take arguments and make `this` the plot object.
+
 #### 0.3.1 &mdash; June 15, 2021
 
-* Add `call`.
+* Add `tp.call`.
 
 #### 0.3.0 &mdash; May 28, 2021
 
@@ -12,7 +16,7 @@
 #### 0.2.0 &mdash; May 7, 2021
 
 * Add updates: updatable channels, `tp.update`, `tp.mergeUpdate`.
-* Add marks:  `circle`, `path`.
+* Add marks: `circle`, `path`.
 * Add channels: `front`, `listen`, `delay`, `duration`, `ease`.
 * Change `click`, `mouseenter`, `mouseleave`, `subplot` from options to channels.
 * Can use `borderRadius` channel with bars.

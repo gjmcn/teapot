@@ -2119,8 +2119,9 @@ tp :: 'each' = fun d f
     this
 
 // call method
-tp :: 'call' = fun f
-    this <\f
+tp :: 'call' = fun f rest
+    f ~'apply' this rest
+    this
 
 // layer method
 tp :: 'layer' = fun rest
