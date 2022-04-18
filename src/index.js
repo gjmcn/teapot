@@ -1,85 +1,2706 @@
-export var tp;
-import * as d3 from 'd3-shape';
-import merge from 'lodash-es/merge.js';
-import cloneDeep from 'lodash-es/cloneDeep';
-import {defOptions, defChannels, defShapeScheme} from './defaults.js';
-(() => {
-'use strict'; return _z_ = {
-selectAll(...e){return 1===e.length?[...document.querySelectorAll(e[0])]:[...this._first(e[0]).querySelectorAll(e[1])]},
-every(e,t){t=this._callback(t);let r=0;for(let n of e)if(!t(n,r++,e))return!1;return!0},
-empties(...e){return this._mdArray(e)},
-toUpperCase(e){return this._ew(e,(e=>String(e).toUpperCase()))},
-toLowerCase(e){return this._ew(e,(e=>String(e).toLowerCase()))},
-some(e,t){t=this._callback(t);let r=0;for(let n of e)if(t(n,r++,e))return!0;return!1},
-string(e){return this._ew(e,String)},
-attr(...e){return 2===e.length?this._apsGet(this._getAttr,...e):this._apsSet(this._setAttr,...e)},
-number(e){return this._ew(e,Number)},
-abs(e){return this._ew(e,Math.abs)},
-round(e){return this._ew(e,Math.round)},
-ceil(e){return this._ew(e,Math.ceil)},
-floor(e){return this._ew(e,Math.floor)},
-$path(e){return this._create(!0,"path",e)},
-sqrt(e){return this._ew(e,Math.sqrt)},
-style(...e){return 2===e.length?this._apsGet(this._getStyle,...e):this._apsSet(this._setStyle,...e)},
-$g(e){return this._create(!0,"g",e)},
-$defs(e){return this._create(!0,"defs",e)},
-insert(e,t,r=(()=>null)){e=this._first(e),t="function"==typeof t?t.call(e,e.__data__):this._autoSelect(t),r=this._first(r.call(e,e.__data__));for(let n of t&&t[Symbol.iterator]?t:[t])e.insertBefore(n,r);return t},
-$linearGradient(e){return this._create(!0,"linearGradient",e)},
-*linSpace(e,t,r){if(1==(r=+r))yield(+e+ +t)/2;else{const n=(+t-+e)/(r-1);e=+e-n;for(let t=0;t<r;t++)yield e+=n}},
-encodeSVG(e,t,r){return this._encode(!0,e,t,r)},
-$rect(e){return this._create(!0,"rect",e)},
-select(...e){return 1===e.length?document.querySelector(e[0]):this._first(e[0]).querySelector(e[1])},
-sketch({width:e=300,height:t=300,context:r="2d",scale:n=!0,...s}={}){let o=window.devicePixelRatio,i=document.createElement("canvas"),a=i.getContext(r,s);return n&&"2d"===r?(i.style.width=e+"px",i.style.height=t+"px",i.width=e*o,i.height=t*o,a.scale(o,o)):(i.width=e,i.height=t),[i,a]},
-array(...e){const t=[];for(let r of e)if("string"!=typeof r&&r&&r[Symbol.iterator])for(let e of r)t.push(e);else t.push(r);return t},
-pick(e,t){let r=[];for(let n of e)r.push(n[t]);return r},
-reduce(e,t,r){let n=0;for(let s of e)r=t(r,s,n++,e);return r},
-$text(e){return this._create(!0,"text",e)},
-text(...e){return 1===e.length?this._apsGet(this._getProp,e[0],"textContent"):this._apsSet(this._setProp,e[0],"textContent",e[1])},
-into(e,t,r=(()=>null)){t=this._first(t),"function"==typeof e?e=e.call(t,t.__data__):"string"==typeof e&&(e=document.querySelectorAll(e)),r=this._first(r.call(t,t.__data__));for(let n of e&&e[Symbol.iterator]?e:[e])t.insertBefore(n,r);return t},
-$line(e){return this._create(!0,"line",e)},
-max(e,t){return this._minMax(!0,e,this._callback(t))},
-$svg(e){return this._create(!0,"svg",e)},
-prop(...e){return 2===e.length?this._apsGet(this._getProp,...e):this._apsSet(this._setProp,...e)},
-addClass(e,t){return this._addRemoveClass(!0,e,t)},
-$clipPath(e){return this._create(!0,"clipPath",e)},
-$circle(e){return this._create(!0,"circle",e)},
-boolean(e){return this._ew(e,Boolean)},
-filter(e,t){t=this._callback(t);let r=[],n=0;for(let s of e)t(s,n++,e)&&r.push(s);return r},
-groupCount(e,t,r){return this._group(!0,e,this._callback(t),r)},
-group(e,t,r){return this._group(!1,e,this._callback(t),r)},
-$div(e){return this._create(!1,"div",e)},
-min(e,t){return this._minMax(!1,e,this._callback(t))},
-order(e,t,r){return[...e].sort(this._compare(t,r))},
-binCount(e,t,r,n){return this._bin(!0,e,t,r,n)},
-bin(e,t,r,n){return this._bin(!1,e,t,r,n)},
-*to(e,t,r=1){for(r=+r,t=+t,t+=1e-14*(t-(e=+e));r>0?e<t:e>t;)yield e,e+=r},
-lower(e){if((e=this._autoSelect(e))&&e[Symbol.iterator])for(let t of e){let e=t.parentNode;e.insertBefore(t,e.firstChild)}else{let t=e.parentNode;t.insertBefore(e,t.firstChild)}return e},
-raise(e){if((e=this._autoSelect(e))&&e[Symbol.iterator])for(let t of e)t.parentNode.insertBefore(t,null);else e.parentNode.insertBefore(e,null);return e},
-at(...e){return this._at(...e)},
-chg(e,t,r){return e[t]=r,e},
-_first(e){return"string"==typeof e?document.querySelector(e):e&&e[Symbol.iterator]?e[Symbol.iterator]().next().value:e},
-_callback(e=(e=>e)){return"function"==typeof e?e:t=>t[e]},
-_mdArray(e,t){return function r(n){const s=new Array(+e[n]);if(n===e.length-1)void 0!==t&&s.fill(t);else for(let t=0;t<+e[n];t++)s[t]=r(n+1);return s}(0)},
-_ew(e,t){let r;if("string"!=typeof e&&e&&e[Symbol.iterator]){r=[];for(let n of e)r.push(t(n))}else r=t(e);return r},
-_apsGet(e,t,r){let n;if("string"==typeof t&&(t=document.querySelectorAll(t)),t&&t[Symbol.iterator]){n=[];for(let s of t)n.push(e(s,r))}else n=e(t,r);return n},
-_apsSet(e,t,r,n){let s=0;t=this._autoSelect(t);for(let o of t&&t[Symbol.iterator]?t:[t])e(o,r,"function"==typeof n?n.call(o,o.__data__,s++):n);return t},
-_getAttr(e,t){return e.getAttribute(t)},
-_setAttr(e,t,r){e.setAttribute(t,r)},
-_autoSelect(e){return"string"==typeof e?[...document.querySelectorAll(e)]:e},
-_create(e,t,r){let n;if(void 0===r)n=this._createElm(e,t);else{n=[];for(let s=0;s<r;s++)n.push(this._createElm(e,t))}return n},
-_createElm(e,t){return e?document.createElementNS("http://www.w3.org/2000/svg",t):document.createElement(t)},
-_getStyle(e,t){return window.getComputedStyle(e).getPropertyValue(t)},
-_setStyle(e,t,r){e.style.setProperty(t,r)},
-_encode(e,t,r,n=!0){let s=[];for(let o of t){let t=e?document.createElementNS("http://www.w3.org/2000/svg",r):document.createElement(r);n&&(t.__data__=o),s.push(t)}return s},
-_getProp(e,t){return e[t]},
-_setProp(e,t,r){e[t]=r},
-_minMax(e,t,r){let n,s=NaN,o=0,i=e?(e,t)=>e<=t:(e,t)=>e>=t;for(let e of t){let a=+r(e,o++,t);if(isNaN(a))return;i(a,s)||(s=a,n=e)}return n},
-_addRemoveClass(e,t,r){if(e=e?"add":"remove",r=r.trim().split(/^|\s+/),(t=this._autoSelect(t))&&t[Symbol.iterator])for(let n of t)n.classList[e](...r);else t.classList[e](...r);return t},
-_group(e,t,r,n){let s=new Map,o=0;for(let n of t){let i=r(n,o++,t);e?s.set(i,s.has(i)?s.get(i)+1:1):s.has(i)?s.get(i).push(n):s.set(i,[n])}if(void 0!==n){o=0;for(let[e,t]of s)s.set(e,n(t,e,o++))}return s},
-_compare(e=((e,t)=>e-t),t){return"asc"===e?void 0===t?(e,t)=>e-t:(e,r)=>e[t]-r[t]:"desc"===e?void 0===t?(e,t)=>t-e:(e,r)=>r[t]-e[t]:e},
-_bin(e,t,r,n=((e,t)=>e-t),s){r=[...r];let o=new Map;for(let t of r)o.set(t,e?0:[]);for(let s of t)for(let t of r)if(n(s,t)<=0){e?o.set(t,o.get(t)+1):o.get(t).push(s);break}if(void 0!==s){let e=0;for(let[t,r]of o)o.set(t,s(r,t,e++))}return o},
-_at(e,t,r){let n;if(r||Array.isArray(e)){n=[];for(let r of t)n.push(e[r])}else if("string"==typeof e){n="";for(let r of t)n+=e[r]}else{n={};for(let r of t)n[r]=e[r]}return n},
-},
-(void 0), (void 0), (void 0), (void 0), (void 0), clipCount = 0, gradientCount = 0, markNames = (new Set(['hBar','vBar','point','circle','rect','segment','hLink','vLink','arc','edge','text','path','line','hBand','vBand'])), singleMarkNames = (new Set(['line','hBand','vBand'])), transitionMarkNames = (new Set(['circle','hBar','vBar','rect','text'])), channelNames = (new (Set)((defChannels["keys"]()))), nonUpdateChannelNames = (new Set(['xOffset','yOffset','class','name','note','noteColor','noteOpacity','noteXOffset','noteYOffset','subplot'])), handlerChannelNames = (new Set(['mouseenter','mouseleave','click'])), iterableOfElelements = (function(elmts) {return (((typeof elmts === 'string'))?(_z_.selectAll(elmts)):(elmts?.[(Symbol["iterator"])])?(elmts):true?([elmts]):void 0); }), getKind = (function(ch) {return defChannels["get"](ch)['_kind']; }), xyChannelNames = (new Set(['x','xx','y','yy'])), nonPathChannelNames = (new Set(['x','y','xOffset','yOffset'])), legendFillStrokeChannels = (new Set(['fill','fillOpacity','stroke','strokeOpacity','strokeWidth','strokeDash'])), angleChannels = (new Set(['startAngle','endAngle','padAngle'])), curveTypes = (new Set(['basis','basisOpen','bundle','cardinal','cardinalOpen','catmullRom','catmullRomOpen','linear','monotoneX','monotoneY','natural','curveStep','curveStepAfter','curveStepBefore','basisClosed','cardinalClosed','catmullRomClosed','linearClosed'])), markChannelError = (function(a,b,c) {return (e => {throw e})(Error(((((('mark-'+a)+', channel-')+b)+', ')+c))); }), isInfOrNaN = (function(val) {return ((Number.isNaN(val)||((val===Infinity)))||((val===((-Infinity))))); }), nonFiniteMsg = 'non-finite data value (NaN, Infinity or -Infinity)', allMissingMsg = 'every datum has a missing value', isArrayOfObjects = (function(d) {return (Array.isArray(d)&&(_z_.every(d,(function(a,b,c) {return (((typeof a)==='object')&&((a!==null))); })))); }), getDataset = (function(ds) {return (((Number.isInteger(ds)&&((ds>0))))?(ds = (_z_x => {let _z_i = -1; for (let v of _z_x) {let a = _z_x; let i = ++_z_i; (a[i]) = i} return _z_x})(_z_.empties(ds))):((!Array.isArray(ds)))?((e => {throw e})(Error('dataset must be an array or a positive integer'))):(((ds["length"])===0))?((e => {throw e})(Error('dataset cannot be empty'))):void 0), ds; }), capitalize = (function(s) {return (_z_.toUpperCase((s["0"]))+(s["slice"](1))); }), camelToKebab = (function(s) {return s["replace"](/[A-Z]/g,(function(a,b,c) {return ('-'+(_z_.toLowerCase(a))); })); }), cropTilde = (function(s) {return (((typeof s === 'string')&&(((s["0"])==='~')))?(s["slice"](1)):s); }), minVal = (function(arr) {return mn = Infinity, (_z_x => {for (let v of _z_x) {((((((v!==null))&&((v!==undefined)))&&((v<mn))))?(mn = v):void 0)} return _z_x})(arr), mn; var mn}), maxVal = (function(arr) {return mx = (-Infinity), (_z_x => {for (let v of _z_x) {((((((v!==null))&&((v!==undefined)))&&((v>mx))))?(mx = v):void 0)} return _z_x})(arr), mx; var mx}), checkShapeScheme = (function(scheme,mk) {return ((((scheme!==defShapeScheme)&&(_z_.some(scheme,(function(a,b,c) {return (!defShapeScheme["includes"](a)); })))))?((e => {throw e})(Error((('mark-'+(mk["type"]))+', invalid shape name')))):void 0), scheme; }), checkData = (function(arr,mk,ch) {return ((((arr["length"])===0))?(markChannelError((mk["type"]),ch,'empty data array')):void 0), ((_z_.some(arr,isInfOrNaN))?(markChannelError((mk["type"]),ch,nonFiniteMsg)):void 0), ((((((mk["missing"])==='skip'))||(((mk["missing"])==='gap'))))?(missingInds = (new Set([])), ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; (((((arr[i]) ?? null) === null))?(missingInds["add"](i)):void 0)}})((arr["length"])), ((((missingInds["size"])===(arr["length"])))?(markChannelError((mk["type"]),ch,allMissingMsg)):void 0)):true?(((_z_.some(arr,(function(a,b,c) {return ((a ?? null) === null); })))?(markChannelError((mk["type"]),ch,'missing data value')):void 0)):void 0), ((o,v1) => {o.missingInds=v1;return o})(({"data":arr,}),missingInds); var missingInds}), getChannelDefault = (function(mk,ch) {return obj = defChannels["get"](ch), (obj["hasOwnProperty"]((mk["type"]))?(obj[(mk["type"])]):(obj["def"])); var obj}), fourOption = (function(_options,opName) {return ((passed) => {return def = (defOptions[opName]), ((Array.isArray(passed))?((_z_x => {let _z_i = -1; for (let e of _z_x) {let arr = _z_x; let i = ++_z_i; (arr[i]) = ((passed[i])??def)} return _z_x})(_z_.empties(4))):true?(_z_.empties(4)["fill"](((passed??def)))):void 0); var def})((_options[opName])); }), populateDataMap = (function(dMap,ch,orderOp,seqOp) {return (((!((orderOp ?? null) === null)))?((((!Array.isArray(orderOp)))?((e => {throw e})(Error((ch+'Order is not an array')))):void 0), ((_z_.some(orderOp,(function(a,b,c) {return ((typeof a)==='number'); })))?((e => {throw e})(Error((ch+'Order contains a number')))):void 0), ((_z_.some(orderOp,(function(a,b,c) {return ((a ?? null) === null); })))?((e => {throw e})(Error((ch+'Order contains a null or undefined value')))):void 0), ((((new (Set)(orderOp))['size']<(orderOp["length"])))?((e => {throw e})(Error((ch+'Order contains a duplicate')))):void 0), (_z_x => {for (let val of _z_x) {dMap["set"](val,(dMap["size"]))} return _z_x})(orderOp)):((!((seqOp ?? null) === null)))?(((((!Number.isInteger(seqOp))||((seqOp<=0))))?((e => {throw e})(Error((ch+'Seq must be a positive integer')))):void 0), j = 0, (() => {let _z_s; while (1) {(((j<seqOp))?(dMap["set"]((_z_.string(j)),j), j += 1):true?((_z_s = 1, void 0)):void 0); if (_z_s) break}})()):void 0); var j}), updateDataMap = (function(dataMap,key) {return ((((typeof key)==='number'))?(key):(dataMap["has"](key))?(dataMap["get"](key)):true?(sz = (dataMap["size"]), dataMap["set"](key,sz), sz):void 0); var sz}), setUnlessNullish = (function(elm,attrName,val) {return (((!((val ?? null) === null)))?(_z_.attr(elm,attrName,val)):void 0), elm; }), useColorScheme = (function(data,scheme,mk,ch) {return isConst = (!Array.isArray(data)), ((((typeof scheme)==='function'))?([mn,mx,] = (mk[((ch+'Limits'))]??([null,null])), mn = _z_.number((mn??((isConst?data:(minVal(data)))))), mx = _z_.number((mx??((isConst?data:(maxVal(data)))))), (((!(Number.isFinite(mn)&&(Number.isFinite(mx)))))?(markChannelError((mk["type"]),ch,((ch+' limits are not finite')))):void 0), ((((mx-mn)<1e-14))?(markChannelError((mk["type"]),ch,((ch+' limits are equal or the wrong way round')))):void 0), (isConst?(data = scheme(((data-mn)/((mx-mn))))):true?(rng = (mx-mn), ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; (data[i]) = scheme((((data[i])-mn)/rng))}})((data["length"]))):void 0), info = ((o,v1) => {o.scheme=v1;return o})(({'min':mn,'max':mx,}),scheme)):true?((isConst?(data = (scheme[data])):true?(((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; (data[i]) = scheme[(data[i])]}})((data["length"]))):void 0), info = ((o,v1) => {o.scheme=v1;return o})(({}),scheme)):void 0), ((o,v1,v2) => {o.data=v1;o.info=v2;return o})(({}),data,info); var isConst,mn,mx,rng,info}), equalTo = (function(u,v) {return (_z_.abs((u-v))<1e-14); }), magnitude = (function(v) {return sf = v["toExponential"](), _z_.number(sf["slice"](((sf["indexOf"]('e')+1)))); var sf}), magnitude10 = (function(v) {return m = magnitude(v), (equalTo((10**m),v)?((m-1)):m); var m}), roundToMagnitude = (function(v,mag,upDown) {return magVal = (10**mag), v = (v/magVal), r = _z_.round(v), v = ((equalTo(v,r))?(r):((upDown==='up'))?(_z_.ceil(v)):((upDown==='down'))?(_z_.floor(v)):true?(r):void 0), enforceRound((v*magVal),mag); var magVal,r}), enforceRound = (function(v,mag) {return ((mag<0)?(_z_.number(v["toFixed"]((_z_.abs(mag))))):v); }), accuracy = (function(t) {return m = magnitude(t), s = 1, (() => {let _z_s; while (1) {((equalTo(_z_.number(t["toPrecision"](s)),t))?((_z_s = 1, void 0)):((s===14))?((e => {throw e})(Error('failed to compute accuracy'))):true?(s += 1):void 0); if (_z_s) break}})(), ((m-s)+1); var m,s}), getTextWidth = (function(ctx,txt) {return ctx["measureText"](txt)['width']; }), shapeDetails = ({'circle':(({"name":'Circle',"xMult":1.138,"yMult":1.138,})),'square':(({"name":'Square',"xMult":1,"yMult":1,})),'diamond':(({"name":'Square',"xMult":1.414,"yMult":1.414,"rotate":45,})),'star':(({"name":'Star',"xMult":1.777,"yMult":1.777,})),'wye':(({"name":'Wye',"xMult":1.469,"yMult":1.469,})),'triangle-up':(({"name":'Triangle',"xMult":1.477,"yMult":1.3,"yShift":0.2,})),'triangle-down':(({"name":'Triangle',"xMult":1.477,"yMult":1.3,"yShift":((-0.2)),"rotate":180,})),'triangle-right':(({"name":'Triangle',"xMult":1.3,"yMult":1.477,"xShift":((-0.15)),"rotate":90,})),'triangle-left':(({"name":'Triangle',"xMult":1.3,"yMult":1.477,"xShift":0.15,"rotate":270,})),"plus":(({"name":'Cross',"xMult":1.331,"yMult":1.331,})),"times":(({"name":'Cross',"xMult":1.254,"yMult":1.254,"rotate":45,})),}), pointSymbol = (function(ops={}) {return ({path,shape,area,x,y,} = ops), ({name,rotate,} = (shapeDetails[shape])), tform = (((('translate('+x)+' ')+y)+')'), (rotate?(tform += ((' rotate('+rotate)+')')):void 0), _z_.attr(_z_.attr((path??(_z_.$path())),'d',(d3["symbol"]((d3[(('symbol'+name))]),area)())),'transform',tform); var path,shape,area,x,y,name,rotate,tform}), hBarValues = (function(ops={}) {return ({x,xx,y,h,} = ops), xCorner = ((x, y) => y < x ? y : x)(x,xx), width = _z_.abs((x-xx)), height = h, yCorner = (y-((h/2))), ((o,v1,v2,v3,v4) => {o.xCorner=v1;o.yCorner=v2;o.width=v3;o.height=v4;return o})(({}),xCorner,yCorner,width,height); var x,xx,y,h,xCorner,width,height,yCorner}), vBarValues = (function(ops={}) {return ({x,y,yy,w,} = ops), width = w, xCorner = (x-((w/2))), yCorner = ((x, y) => y < x ? y : x)(y,yy), height = _z_.abs((y-yy)), ((o,v1,v2,v3,v4) => {o.xCorner=v1;o.yCorner=v2;o.width=v3;o.height=v4;return o})(({}),xCorner,yCorner,width,height); var x,y,yy,w,width,xCorner,yCorner,height}), dEdge = (function(values) {return ({x,xx,y,yy,size,clockwise,} = values), r = ((_z_.sqrt(((((x-xx)**2))+(((y-yy)**2))))/2)/((size**((1/3))))), ((((((((((((('M '+x)+',')+y)+' A ')+r)+' ')+r)+' 0 0 ')+clockwise)+' ')+xx)+',')+yy); var x,xx,y,yy,size,clockwise,r}), dLineBand = (function(ops={}) {return ({missing,nObs,type,curveType,presentInds,x,xx,y,yy,} = ops), lineFunc = ((((type==='line'))?(d3["line"]((function(a,b,c) {return x(a); }),(function(a,b,c) {return y(a); }))):((type==='hBand'))?(d3["area"]()["x"]((function(a,b,c) {return x(a); }))["y0"]((function(a,b,c) {return y(a); }))["y1"]((function(a,b,c) {return yy(a); }))):((type==='vBand'))?(d3["area"]()["x0"]((function(a,b,c) {return x(a); }))["x1"]((function(a,b,c) {return xx(a); }))["y"]((function(a,b,c) {return y(a); }))):void 0))["curve"]((d3[(('curve'+(capitalize(curveType))))])), (((missing==='gap'))?(lineFunc["defined"]((function(a,b,c) {return presentInds["has"](a); }))(((function(a,b,c) {return (function*(_z_l) {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; (yield i)}})(nObs); })()))):true?(lineFunc(presentInds)):void 0); var missing,nObs,type,curveType,presentInds,x,xx,y,yy,lineFunc}), setTextTransform = (function(elm,x,y,rot) {return tform = (((('translate('+x)+',')+y)+')'), (((!((rot ?? null) === null)))?(tform = ((((((('rotate('+rot)+',')+x)+',')+y)+') ')+tform)):void 0), _z_.attr(elm,'transform',tform); var tform}), setTransitionInitial = (function(elm,channels,i) {return delay = channels["delay"](i), duration = channels["duration"](i), ease = channels["ease"](i), setTransition(elm,delay,duration,ease); var delay,duration,ease}), setTransition = (function(elm,delay,duration,ease) {return (((delay||duration))?(_z_.style(elm,'transition',((((((('all '+((duration||0)))+'ms ')+ease)+' ')+((delay||0)))+'ms')))):true?(elm['style']["removeProperty"]('transition')):void 0), elm; }), polygonCentroid = (function(p) {return i = (-1), n = (p["length"]), x = 0, y = 0, a = null, b = p[((n-1))], c = null, k = 0, (() => {let _z_s; while (1) {i += 1, (((i<n))?(a = b, b = (p[i]), c = (((a["0"])*(b["1"]))-(((b["0"])*(a["1"])))), k += c, x += (((a["0"])+(b["0"]))*c), y += (((a["1"])+(b["1"]))*c)):true?((_z_s = 1, void 0)):void 0); if (_z_s) break}})(), k *= 3, [((x/k)),((y/k))]; var i,n,x,y,a,b,c,k}), colorRamp = (function(schemeFun,width,height) {return f = (function(v) {return schemeFun((1-v)); }), id = ('legend-gradient-'+gradientCount), gradientCount += 1, g = _z_.$g(), _z_.attr(_z_.attr(_z_.insert(_z_.attr(_z_.attr(_z_.insert(_z_.insert(g,(_z_.$defs())),(_z_.$linearGradient())),'id',id),'gradientTransform','rotate(90)'),(_z_.encodeSVG(_z_.linSpace(0,1,16),'stop'))),'offset',(function(a,b,c) {return ((a*100)+'%'); })),'stop-color',f), _z_.attr(_z_.attr(_z_.attr(_z_.insert(g,(_z_.$rect())),'width',width),'height',height),'fill',((('url(#'+id)+')'))), g; var f,id,g}), addToTarget = (function(content,target) {return (target?(((typeof target === 'string')?(_z_.select(target)):target)["append"](content)):void 0), content; }), tp = (class {constructor() {(this["_marks"]) = [], (this["_dataset"]) = null, (this["_options"]) = ({}), (this["_state"]) = null; }}), tp["prototype"]['plot'] = (function(target) {return ({_marks,_dataset,_options,} = this), _state = ((_options["_outerContainer"])?(_options["_outerContainer"]["__tp__"]["state"]):(cloneDeep((this["_state"])))), ((((_marks["length"])===0))?((e => {throw e})(Error('plot has no marks'))):void 0), op = (function(a,b,c) {return ((_options[a])??(defOptions[a])); }), setAttr = (function(a,b,c) {return _z_.attr(a,b,(op(c))); }), setDimAttr = (function(elm,dim,attrName,opName) {return _z_.attr(elm,attrName,((op((dim+(capitalize(opName))))??(op(opName))))); }), setFont = (function(elm,prefix) {return _z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.attr(elm,'font-family',((op((prefix+'FontFamily'))??(op('fontFamily'))))),'font-size',(((op((prefix+'FontSize'))??(op('fontSize')))+'px'))),'font-style',((op((prefix+'FontStyle'))??(op('fontStyle'))))),'font-weight',((op((prefix+'FontWeight'))??(op('fontWeight'))))),'fill',((op((prefix+'Color'))??(op('color'))))),'fill-opacity',((op((prefix+'Opacity'))??(op('opacity'))))),'stroke-width',0); }), getCanvasContext = (function(prefix) {return [canvas,ctx,] = _z_.sketch(), (ctx["font"]) = (((((((''+((op((prefix+'FontStyle'))??(op('fontStyle')))))+' ')+((op((prefix+'FontWeight'))??(op('fontWeight')))))+' ')+(((op((prefix+'FontSize'))??(op('fontSize')))+'px')))+' ')+((op((prefix+'FontFamily'))??(op('fontFamily'))))), ctx; var canvas,ctx}), channelData = (function(mk,ch,markUpdate) {return data = (mk[ch]), isSubplot = (ch==='subplot'), isHandler = handlerChannelNames["has"](ch), isSingleMarkNonXY = ((singleMarkNames["has"]((mk["type"]))&&((!xyChannelNames["has"](ch))))), ((((data ?? null) === null))?(({"isConst":true,"data":(getChannelDefault(mk,ch)),})):(Array.isArray(data))?(((((isSubplot||isHandler)||isSingleMarkNonXY))?(markChannelError((mk["type"]),ch,'unexpected array')):void 0), checkData(_z_.array(data),mk,ch)):(((((typeof data === 'string')&&(((data["0"])==='~'))))||((typeof data === 'function'))))?(ds = ((mk["data"])??_dataset), (((!ds))?(markChannelError((mk["type"]),ch,('no dataset attached to mark or plot'))):void 0), (((typeof data === 'string'))?(((((isSubplot||isHandler)||isSingleMarkNonXY))?(markChannelError((mk["type"]),ch,'unexpected ~string')):void 0), checkData(_z_.pick(ds,(data["slice"](1))),mk,ch)):true?(hasStateParam = ((data["length"])>2), (hasStateParam?((((nonUpdateChannelNames["has"](ch)||isHandler))?(markChannelError((mk["type"]),ch,'channel is not updatable')):void 0), ((((defChannels["get"](ch)['_kind']==='text')&&(((mk["type"])!=='text'))))?(markChannelError((mk["type"]),ch,('channel is not updatable unless used with a text mark'))):void 0), (((((mk["type"])==='rect')&&((!(((mk["subplot"]) ?? null) === null)))))?(markChannelError((mk["type"]),ch,('channel is not updatable since rect is a subplot'))):void 0)):void 0), (isSingleMarkNonXY?((isHandler?(({"isConst":true,"data":ds,})):true?((hasStateParam?(markUpdate["set"](ch,((function(s) {return data(ds,null,s); })))):void 0), val = data(ds,null,_state), ((isInfOrNaN(val))?(markChannelError((mk["type"]),ch,nonFiniteMsg)):void 0), ({"isConst":true,"data":((val??(getChannelDefault(mk,ch)))),})):void 0)):true?((isHandler?(({"isConst":false,"data":ds,})):true?((hasStateParam?(markUpdate["set"](ch,((function(i,s) {return data((ds[i]),i,s); })))):void 0), (isSubplot?(({"isConst":false,"data":ds,})):true?(checkData((_z_x => {let _z_i = -1; let _z_m = []; for (let d of _z_x) {let i = ++_z_i; _z_m[_z_i] = (data(d,i,_state))} return _z_m})(ds),mk,ch)):void 0)):void 0)):void 0)):void 0)):true?((((isSubplot||isHandler))?(markChannelError((mk["type"]),ch,'unexpected constant value')):void 0), ((isInfOrNaN(data))?(markChannelError((mk["type"]),ch,nonFiniteMsg)):void 0), ((o,v1) => {o.data=v1;return o})(({"isConst":true,}),data)):void 0); var data,isSubplot,isHandler,isSingleMarkNonXY,ds,hasStateParam,val}), dataMaps = ({"x":((new Map([]))),"y":((new Map([]))),"fill":((new Map([]))),"stroke":((new Map([]))),"shape":((new Map([]))),}), (_z_x => {for (let dim of _z_x) {populateDataMap((dataMaps[dim]),dim,(op((dim+'Order'))),(op((dim+'Seq'))))} return _z_x})('xy'), limitsOp = op('limits'), ((Array.isArray(limitsOp))?(((((limitsOp["length"])<4))?(limitsOp = _z_.array(limitsOp), (limitsOp["length"]) = 4):void 0), [xMinOp,xMaxOp,yMinOp,yMaxOp,] = ((u, v) => {let r = []; for (let s of u) r.push(s ?? v); return r})(limitsOp,(defOptions["limits"]))):true?(xMinOp = limitsOp, xMaxOp = limitsOp, yMinOp = limitsOp, yMaxOp = limitsOp):void 0), xMin = ((((xMinOp==='_nice')||((xMinOp==='_data'))))?Infinity:xMinOp), xMax = ((((xMaxOp==='_nice')||((xMaxOp==='_data'))))?((-Infinity)):xMaxOp), yMin = ((((yMinOp==='_nice')||((yMinOp==='_data'))))?Infinity:yMinOp), yMax = ((((yMaxOp==='_nice')||((yMaxOp==='_data'))))?((-Infinity)):yMaxOp), xMinReqd = (xMin===Infinity), xMaxReqd = (xMax===((-Infinity))), yMinReqd = (yMin===Infinity), yMaxReqd = (yMax===((-Infinity))), markChannels = (new Map([])), markObs = (new Map([])), markSchemes = (new Map([])), markAreaInfo = (new Map([])), markPresentInds = (new Map([])), markUpdates = (new Map([])), (_z_x => {for (let mk of _z_x) {let type,channels,nObs,schemeInfo,markUpdate,missingAll,channelsList,noteUsed,pieUsed,presentInds; ({type,} = mk), channels = ({}), nObs = null, schemeInfo = ({}), markUpdate = (new Map([])), missingAll = (new Set([])), channelsList = (new Set([])), noteUsed = (!(((mk["note"]) ?? null) === null)), pieUsed = (!(((mk["pie"]) ?? null) === null)), (_z_x => {for (let ch of _z_x) {let kind,data,missingInds,isConst; kind = getKind(ch), ((((((((kind==='common')&&(((type!=='path')||((!nonPathChannelNames["has"](ch)))))))||(((type==='text')&&((kind==='text')))))||(((((type!=='text')&&((type!=='path')))&&noteUsed)&&(((kind==='text')||((kind==='note')))))))||((((kind==='special')&&(defChannels["get"](ch)["hasOwnProperty"](type)))&&((!((!pieUsed)&&((ch==='pie')))))))))?(channelsList["add"](ch), ({data,missingInds,isConst,} = channelData(mk,ch,markUpdate)), ((((pieUsed&&(angleChannels["has"](ch)))&&((!isConst))))?(markChannelError(type,ch,('data must be constant when used with pie channel'))):void 0), (missingInds?((_z_x => {for (let i of _z_x) {missingAll["add"](i)} return _z_x})(missingInds)):void 0), (((!isConst))?((((nObs===null))?(nObs = (data["length"])):(((data["length"])!==nObs))?(markChannelError(type,ch,('length of data not consistent with other channels'))):void 0)):void 0), (channels[ch]) = data):void 0)} return _z_x})(channelNames), (((nObs===null))?(nObs = 1):void 0), presentInds = (new Set([])), ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; presentInds["add"](i)}})(nObs), (_z_x => {for (let i of _z_x) {presentInds['delete'](i)} return _z_x})(missingAll), ((((presentInds["size"])===0))?((e => {throw e})(Error(((('mark-'+type)+', ')+allMissingMsg)))):void 0), (_z_x => {for (let ch of _z_x) {let data,isConst,scheme,dataMap; data = (channels[ch]), isConst = (!Array.isArray(data)), ((((((xyChannelNames["has"](ch))||((ch==='fill')))||((ch==='stroke')))||((ch==='shape'))))?(scheme = mk[((ch+'Scheme'))], ((xyChannelNames["has"](ch))?(dataMap = dataMaps[(ch["0"])]):true?(dataMap = null, (((typeof scheme === 'string'))?(scheme = [scheme]):void 0), (() => {return ((((ch==='shape')||(((!((scheme ?? null) === null))&&(((typeof scheme)!=='function'))))))?(dataMap = (new Map([])), populateDataMap(dataMap,ch,(mk[((ch+'Order'))]),(mk[((ch+'Seq'))])), (dataMaps[ch])["set"](mk,dataMap)):void 0); })()):void 0), (dataMap?((isConst?(data = updateDataMap(dataMap,data)):true?((_z_x => {let _z_i = -1; for (let v of _z_x) {let i = ++_z_i; ((presentInds["has"](i))?((data[i]) = updateDataMap(dataMap,v)):void 0)} return _z_x})(data)):void 0)):void 0), ((((ch==='fill')||((ch==='stroke'))))?((() => {return (((!((scheme ?? null) === null)))?(actualColors = useColorScheme(data,scheme,mk,ch), data = (actualColors["data"]), (schemeInfo[ch]) = (actualColors["info"])):void 0); var actualColors})()):((ch==='shape'))?(((s) => {return (isConst?(data = (s[data])):true?(((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; (data[i]) = s[(data[i])]}})((data["length"]))):void 0), (schemeInfo["shape"]) = ({"scheme":s,}); })(checkShapeScheme((scheme??defShapeScheme),mk))):void 0)):void 0), (channels[ch]) = (isConst?((function() {return data; })):((function(i) {return (data[i]); })))} return _z_x})(channelsList), (() => {return xMinNeed = xMinReqd, xMaxNeed = xMaxReqd, yMinNeed = yMinReqd, yMaxNeed = yMaxReqd, ({x,y,xx,yy,size,} = channels), ((dataMaps["x"]["size"])?((xMinNeed?(xMin = ((x, y) => y < x ? y : x)(xMin,0)):void 0), (xMaxNeed?(xMax = ((x, y) => y > x ? y : x)(xMax,(((dataMaps["x"]["size"])-1)))):void 0)):void 0), ((dataMaps["y"]["size"])?((yMinNeed?(yMin = ((x, y) => y < x ? y : x)(yMin,0)):void 0), (yMaxNeed?(yMax = ((x, y) => y > x ? y : x)(yMax,(((dataMaps["y"]["size"])-1)))):void 0)):void 0), ((((type==='rect')&&((!(mk["pixels"])))))?(w = (channels["width"]), h = (channels["height"]), corner = (mk["corner"]), ((xMinNeed)?((_z_x => {for (let i of _z_x) {xMin = ((x, y) => y < x ? y : x)(xMin,((corner?(x(i)):((x(i)-((w(i)/2)))))))} return _z_x})(presentInds), xMinNeed = false):void 0), ((xMaxNeed)?((_z_x => {for (let i of _z_x) {xMax = ((x, y) => y > x ? y : x)(xMax,((x(i)+((w(i)/((corner?1:2)))))))} return _z_x})(presentInds), xMaxNeed = false):void 0), ((yMinNeed)?((_z_x => {for (let i of _z_x) {yMin = ((x, y) => y < x ? y : x)(yMin,((corner?(y(i)):((y(i)-((h(i)/2)))))))} return _z_x})(presentInds), yMinNeed = false):void 0), ((yMaxNeed)?((_z_x => {for (let i of _z_x) {yMax = ((x, y) => y > x ? y : x)(yMax,((y(i)+((h(i)/((corner?1:2)))))))} return _z_x})(presentInds), yMaxNeed = false):void 0)):((type==='vBar'))?(((xMinNeed)?((_z_x => {for (let i of _z_x) {xMin = ((x, y) => y < x ? y : x)(xMin,((x(i)-((size(i)/2)))))} return _z_x})(presentInds), xMinNeed = false):void 0), ((xMaxNeed)?((_z_x => {for (let i of _z_x) {xMax = ((x, y) => y > x ? y : x)(xMax,((x(i)+((size(i)/2)))))} return _z_x})(presentInds), xMaxNeed = false):void 0)):((type==='hBar'))?(((yMinNeed)?((_z_x => {for (let i of _z_x) {yMin = ((x, y) => y < x ? y : x)(yMin,((y(i)-((size(i)/2)))))} return _z_x})(presentInds), yMinNeed = false):void 0), ((yMaxNeed)?((_z_x => {for (let i of _z_x) {yMax = ((x, y) => y > x ? y : x)(yMax,((y(i)+((size(i)/2)))))} return _z_x})(presentInds), yMaxNeed = false):void 0)):void 0), (xMinNeed?((x?((_z_x => {for (let i of _z_x) {xMin = ((x, y) => y < x ? y : x)(xMin,(x(i)))} return _z_x})(presentInds)):void 0), (xx?((_z_x => {for (let i of _z_x) {xMin = ((x, y) => y < x ? y : x)(xMin,(xx(i)))} return _z_x})(presentInds)):void 0)):void 0), (xMaxNeed?((x?((_z_x => {for (let i of _z_x) {xMax = ((x, y) => y > x ? y : x)(xMax,(x(i)))} return _z_x})(presentInds)):void 0), (xx?((_z_x => {for (let i of _z_x) {xMax = ((x, y) => y > x ? y : x)(xMax,(xx(i)))} return _z_x})(presentInds)):void 0)):void 0), (yMinNeed?((y?((_z_x => {for (let i of _z_x) {yMin = ((x, y) => y < x ? y : x)(yMin,(y(i)))} return _z_x})(presentInds)):void 0), (yy?((_z_x => {for (let i of _z_x) {yMin = ((x, y) => y < x ? y : x)(yMin,(yy(i)))} return _z_x})(presentInds)):void 0)):void 0), (yMaxNeed?((y?((_z_x => {for (let i of _z_x) {yMax = ((x, y) => y > x ? y : x)(yMax,(y(i)))} return _z_x})(presentInds)):void 0), (yy?((_z_x => {for (let i of _z_x) {yMax = ((x, y) => y > x ? y : x)(yMax,(yy(i)))} return _z_x})(presentInds)):void 0)):void 0); var xMinNeed,xMaxNeed,yMinNeed,yMaxNeed,x,y,xx,yy,size,w,h,corner})(), ((defChannels["get"]('area')["hasOwnProperty"](type))?(markAreaInfo["set"](mk,((() => {return mn = _z_.reduce(presentInds,(function(a,b,c) {return ((x, y) => y < x ? y : x)(a,(channels["area"](b))); }),Infinity), mx = _z_.reduce(presentInds,(function(a,b,c) {return ((x, y) => y > x ? y : x)(a,(channels["area"](b))); }),((-Infinity))), ({'min':mn,'max':mx,"scale":((((((mk["areaScale"]) ?? null) === null))?((function(a,b,c) {return a; })):((typeof (mk["areaScale"]) === 'function'))?((function(val) {return mk["areaScale"](val,mn,mx); })):(Array.isArray((mk["areaScale"])))?(mnArea = ((mk["areaScale"]["0"])??mn), mxArea = ((mk["areaScale"]["1"])??mx), (((mnArea>=mxArea))?((e => {throw e})(Error((('mark-'+type)+', area min and max are equal or the wrong way round')))):void 0), rng = (mx-mn), rngArea = (mxArea-mnArea), (function(a,b,c) {return ((((a-mn)/rng)*rngArea)+mnArea); })):true?((e => {throw e})(Error((('mark-'+type)+', areaScale must be an array or function')))):void 0)),}); var mn,mx,mnArea,mxArea,rng,rngArea})()))):void 0), markChannels["set"](mk,channels), markObs["set"](mk,nObs), markSchemes["set"](mk,schemeInfo), markPresentInds["set"](mk,presentInds), markUpdates["set"](mk,markUpdate)} return _z_x})(_marks), gLegend = _z_.$g(), legendWidth = 0, legendHeight = 0, legendPosition = op('legendPosition'), legendOut = (legendPosition["slice"](0,3)==='out'), legendGap = op('legendGap'), ((op('legend'))?((() => {return symbolSize = 10, rampHeight = op('legendRampHeight'), rampWidth = 15, pointSize = 64, legendPadding = fourOption(_options,'legendPadding'), hGap = op('legendLabelPadding'), vGap = (1.5*hGap), legendRect = setUnlessNullish(setAttr(setAttr(setAttr(setAttr(_z_.insert(gLegend,(_z_.$rect())),'fill','legendBackground'),'fill-opacity','legendBackgroundOpacity'),'stroke','legendBorderColor'),'stroke-width','legendBorderWidth'),'rx',(op('legendCornerRadius'))), gContent = setFont(_z_.attr(_z_.attr(_z_.attr(_z_.insert(gLegend,(_z_.$g())),'text-anchor','start'),'dominant-baseline','middle'),'transform',(((((('translate('+(legendPadding["3"]))+' ')+(legendPadding["0"]))+')')))),'legendLabel'), titleFontSize = (op('legendTitleFontSize')??(op('fontSize'))), labelFontSize = (op('legendLabelFontSize')??(op('fontSize'))), titleCtx = getCanvasContext('legendTitle'), labelCtx = getCanvasContext('legendLabel'), contentHeight = 0, contentWidth = 0, (_z_x => {for (let mk of _z_x) {let type,channels,chConst,setConstant; ({type,} = mk), channels = markChannels["get"](mk), chConst = ({}), (_z_x => {for (let ch of _z_x) {(chConst[ch]) = ((channels[ch]["length"])?(getChannelDefault(mk,ch)):(channels[(ch)]()))} return _z_x})(legendFillStrokeChannels), setConstant = (function(elm,chs) {return (_z_x => {for (let ch of _z_x) {let attrName; attrName = camelToKebab(ch), (((ch==='strokeDash'))?(attrName += 'array'):void 0), _z_.attr(elm,attrName,(chConst[ch]))} return _z_x})((chs??legendFillStrokeChannels)), elm; }), (_z_x => {for (let ch of _z_x) {let opValue,chFormat,chSchemeInfo,chScheme,titleValue,addLabel; opValue = mk[((ch+'Legend'))], chFormat = (mk[((ch+'Format'))]??(function(a,b,c) {return a; })), chSchemeInfo = markSchemes["get"](mk)?.[ch], chScheme = chSchemeInfo?.['scheme'], (((((opValue===true)||(((opValue!==false)&&(channels[ch]["length"]))))&&((((ch==='shape')||((ch==='area')))||chScheme))))?(titleValue = mk[((ch+'Title'))], (((!((titleValue ?? null) === null)))?(contentHeight += (((contentHeight?((1.5*vGap)):0)+((titleFontSize/2)))), contentWidth = ((x, y) => y > x ? y : x)(contentWidth,(getTextWidth(titleCtx,titleValue))), setFont(_z_.text(_z_.attr(_z_.insert(gContent,(_z_.$text())),'y',contentHeight),titleValue),'legendTitle'), contentHeight += (titleFontSize/2)):void 0), addLabel = (function(nameInt,symbolWidth,central) {return symbolWidth = symbolWidth ?? (symbolSize), lbl = chFormat(...nameInt), elm = _z_.attr(_z_.attr(_z_.text(_z_.$text(),lbl),'x',((symbolWidth+hGap))),'y',contentHeight), (central?(_z_.attr(elm,'dominant-baseline','central')):void 0), _z_.into(elm,gContent), contentWidth = ((x, y) => y > x ? y : x)(contentWidth,(((symbolWidth+hGap)+(getTextWidth(labelCtx,lbl))))); var lbl,elm}), ((((ch==='fill')||((ch==='stroke'))))?((() => {return ((Array.isArray(chScheme))?((_z_x => {for (let nameInt of _z_x) {let pointElm; contentHeight += ((contentHeight?vGap:0)+((labelFontSize/2))), pointElm = null, ((((type==='point')||((type==='circle'))))?(pointElm = pointSymbol((({"shape":(((((type==='circle')||(channels["shape"]["length"])))?('circle'):true?(channels["shape"]()):void 0)),"area":pointSize,"x":((_z_.sqrt(pointSize)/2)),"y":contentHeight,})))):void 0), _z_.into((((ch==='stroke'))?(_z_.attr(setConstant(_z_.attr((pointElm||(_z_.attr(_z_.attr(_z_.attr(_z_.$line(),'x2',symbolSize),'y1',contentHeight),'y2',contentHeight))),'stroke',(chScheme[(nameInt["1"])])),(['strokeOpacity','strokeWidth','strokeDash'])),'fill','none')):true?(_z_.attr(setConstant(_z_.attr((pointElm||(_z_.attr(_z_.attr(_z_.attr(_z_.$rect(),'y',((contentHeight-((symbolSize/2))))),'width',symbolSize),'height',symbolSize))),'fill',(chScheme[(nameInt["1"])])),(['fillOpacity'])),'stroke','none')):void 0),gContent), addLabel(nameInt), contentHeight += (labelFontSize/2)} return _z_x})((dataMaps[ch])["get"](mk))):((typeof chScheme === 'function'))?(contentHeight += (contentHeight?vGap:0), _z_.insert(gContent,(_z_.attr(_z_.attr(colorRamp(chScheme,rampWidth,rampHeight),'transform',((('translate(0 '+contentHeight)+')'))),'fill-opacity',(chConst["fillOpacity"])))), mn = chFormat(chSchemeInfo['min']), mx = chFormat(chSchemeInfo['max']), contentWidth = ((x, y) => y > x ? y : x)(contentWidth,(((rampWidth+hGap)+(((x, y) => y > x ? y : x)(getTextWidth(labelCtx,mn),(getTextWidth(labelCtx,mx))))))), _z_.text(_z_.attr(_z_.attr(_z_.attr(_z_.insert(gContent,(_z_.$text())),'dominant-baseline','hanging'),'x',((rampWidth+hGap))),'y',contentHeight),mx), contentHeight += rampHeight, _z_.text(_z_.attr(_z_.attr(_z_.attr(_z_.insert(gContent,(_z_.$text())),'dominant-baseline','auto'),'x',((rampWidth+hGap))),'y',contentHeight),mn)):void 0); var mn,mx})()):((ch==='shape'))?((_z_x => {for (let nameInt of _z_x) {contentHeight += ((contentHeight?vGap:0)+((labelFontSize/2))), _z_.into(setConstant(pointSymbol((({"shape":(chScheme[(nameInt["1"])]),"area":pointSize,"x":((_z_.sqrt(pointSize)/2)),"y":contentHeight,})))),gContent), addLabel(nameInt), contentHeight += (labelFontSize/2)} return _z_x})((dataMaps["shape"])["get"](mk))):((ch==='area'))?((() => {return areaInfo = markAreaInfo["get"](mk), mn = areaInfo['min'], mx = areaInfo['max'], ({scale,} = areaInfo), ticks = ((mk["areaTickValues"])??([mn,(((mn+mx)/2)),mx])), ((ticks["length"])?(shp = ((((type==='circle')||(channels["shape"]["length"])))?'circle':(channels["shape"]())), ({xMult,yMult,xShift,yShift,} = (shapeDetails[shp])), areas = ticks['map'](scale), hLengths = ((u, v) => {let r = []; for (let s of u) r.push(s * v); return r})(_z_.sqrt(areas),xMult), vLengths = ((u, v) => {let r = []; for (let s of u) r.push(s * v); return r})(_z_.sqrt(areas),yMult), hMax = _z_.max(hLengths), jumps = ((u, v) => {let r = []; for (let s of u) r.push(s / v); return r})(((u, v) => {let r = []; for (let s of u) r.push(v > s ? v : s); return r})(vLengths,labelFontSize),2), x = ((0.5+((xShift??0)))*hMax), (_z_x => {let _z_i = -1; for (let tick of _z_x) {let i = ++_z_i; (contentHeight?(contentHeight += vGap):void 0), contentHeight += (((jumps[((i-1))]??0))+(jumps[i])), _z_.into(setConstant(pointSymbol((({"shape":shp,"area":(areas[i]),"x":x,"y":((contentHeight+(((jumps[i])*((yShift??0)))))),})))),gContent), addLabel(([tick,i]),hMax,'central')} return _z_x})(ticks), contentHeight += jumps[(((ticks["length"])-1))]):void 0); var areaInfo,mn,mx,scale,ticks,shp,xMult,yMult,xShift,yShift,areas,hLengths,vLengths,hMax,jumps,x})()):void 0)):void 0)} return _z_x})((((type==='point'))?(['fill','stroke','shape','area']):((type==='circle'))?(['fill','stroke','area']):true?(['fill','stroke']):void 0))} return _z_x})(_marks), (contentWidth?(legendWidth = ((contentWidth+(legendPadding["3"]))+(legendPadding["1"])), legendHeight = ((contentHeight+(legendPadding["0"]))+(legendPadding["2"])), _z_.attr(_z_.attr(legendRect,'width',legendWidth),'height',legendHeight)):void 0); var symbolSize,rampHeight,rampWidth,pointSize,legendPadding,hGap,vGap,legendRect,gContent,titleFontSize,labelFontSize,titleCtx,labelCtx,contentHeight,contentWidth})()):void 0), (((op('plot')===false))?(gLegend):true?((((!(Number.isFinite(xMin)&&(Number.isFinite(xMax)))))?((e => {throw e})(Error('x limits are not finite numbers'))):void 0), (((!(Number.isFinite(yMin)&&(Number.isFinite(yMax)))))?((e => {throw e})(Error('y limits are not finite numbers'))):void 0), ((((xMax-xMin)<1e-14))?((((((((xMin===0))&&((xMax===0)))&&((xMinOp==='_nice')))&&((xMaxOp==='_nice'))))?(xMin = (-1), xMax = 1):true?((e => {throw e})(Error('x limits are equal or the wrong way round'))):void 0)):void 0), ((((yMax-yMin)<1e-14))?((((((((yMin===0))&&((yMax===0)))&&((yMinOp==='_nice')))&&((yMaxOp==='_nice'))))?(yMin = (-1), yMax = 1):true?((e => {throw e})(Error('y limits are equal or the wrong way round'))):void 0)):void 0), xMag = magnitude10((xMax-xMin)), yMag = magnitude10((yMax-yMin)), (((xMinOp==='_nice'))?(xMin = ((dataMaps["x"]["size"])?((xMin-0.1)):(roundToMagnitude(xMin,xMag,'down')))):void 0), (((xMaxOp==='_nice'))?(xMax = ((dataMaps["x"]["size"])?((xMax+0.1)):(roundToMagnitude(xMax,xMag,'up')))):void 0), (((yMinOp==='_nice'))?(yMin = ((dataMaps["y"]["size"])?((yMin-0.1)):(roundToMagnitude(yMin,yMag,'down')))):void 0), (((yMaxOp==='_nice'))?(yMax = ((dataMaps["y"]["size"])?((yMax+0.1)):(roundToMagnitude(yMax,yMag,'up')))):void 0), xRange = (xMax-xMin), yRange = (yMax-yMin), xClean = (op('xClean')??(op('clean'))), yClean = (op('yClean')??(op('clean'))), usedDims = ((''+((xClean?'':'x')))+((yClean?'':'y'))), ticks = ({"x":([]),"y":([]),}), labels = ({"x":([]),"y":([]),}), (_z_x => {for (let dim of _z_x) {let dimTicks,dimMin,dimMax,dimIsCat,dimLabels,useLabels,fmt,addTick,nonNumericLookup,numericSet,tickValues,tickStep,tickStepMag,t; dimTicks = op((dim+'Ticks')), (((dimTicks||((op('ticks')&&(((dimTicks ?? null) === null))))))?([dimMin,dimMax,] = (((dim==='x'))?([xMin,xMax]):([yMin,yMax])), dimIsCat = (dataMaps[dim]["size"]), dimLabels = op((dim+'Labels')), (((dimLabels||((op('labels')&&(((dimLabels ?? null) === null))))))?(useLabels = true, fmt = (op((dim+'Format'))??(function(a,b,c) {return a; }))):void 0), addTick = ((dimIsCat?(nonNumericLookup = _z_.array((dataMaps[dim])["keys"]()), numericSet = (new (Set)(((dataMaps[dim])["values"]()))), (function(val) {return ((((typeof val)==='number'))?((((!numericSet["has"](val)))?((e => {throw e})(Error((dim+'-ticks, numeric tick value has no corresponding categorical value')))):void 0), (ticks[dim])["push"](val), (useLabels?((labels[dim])["push"]((fmt((nonNumericLookup[val]),val)))):void 0)):true?((((!(dataMaps[dim])["has"](val)))?((e => {throw e})(Error((dim+'-ticks, categorical tick value does not appear in the data')))):void 0), numVal = (dataMaps[dim])["get"](val), (ticks[dim])["push"](numVal), (useLabels?((labels[dim])["push"]((fmt(val,numVal)))):void 0)):void 0); var numVal})):true?((function(val) {return ((((typeof val)!=='number'))?((e => {throw e})(Error((dim+'-ticks, unexpected categorical (non-numeric) tick value')))):void 0), (ticks[dim])["push"](val), (useLabels?((labels[dim])["push"]((fmt(val)))):void 0); })):void 0)), ((((!dimIsCat)&&(op((dim+'TickMin')))))?(addTick(dimMin)):void 0), tickValues = op((dim+'TickValues')), (((!((tickValues ?? null) === null)))?((_z_x => {for (let v of _z_x) {addTick(v)} return _z_x})(tickValues)):true?(tickStep = op((dim+'TickStep')), (dimIsCat?(((((tickStep ?? null) === null))?(tickStep = 1):true?(tickStep = _z_.abs(_z_.number(tickStep)), ((((!Number.isInteger(tickStep))||((tickStep===0))))?((e => {throw e})(Error((('invalid '+dim)+'TickStep for categorical axis')))):void 0)):void 0), (_z_x => {for (let v of _z_x) {((((v%tickStep)===0))?(addTick(v)):void 0)} return _z_x})((dataMaps[dim])["values"]())):true?(((((tickStep ?? null) === null))?(tickStepMag = (((dim==='x'))?xMag:yMag), tickStep = (10**tickStepMag)):true?(tickStep = _z_.abs(_z_.number(tickStep)), (((((!Number.isFinite(tickStep))||((tickStep===0)))||((((dimMax-dimMin)/tickStep)>1000))))?((e => {throw e})(Error((dim+'TickStep is invalid or too small')))):void 0), tickStepMag = accuracy(tickStep)):void 0), t = roundToMagnitude(dimMin,tickStepMag,'up'), (() => {let _z_s; while (1) {(((t<=((dimMax+1e-14))))?(addTick(t), t = enforceRound((t+tickStep),tickStepMag)):true?((_z_s = 1, void 0)):void 0); if (_z_s) break}})()):void 0)):void 0), ((((!dimIsCat)&&(op((dim+'TickMax')))))?(addTick(dimMax)):void 0)):void 0)} return _z_x})(usedDims), getXAxisSpace = (function() {return space = op('xAxisPadding'), xAxis = op('xAxis'), (((xAxis||((op('axis')&&(((xAxis ?? null) === null))))))?(space += ((op('xAxisWidth')??(op('axisWidth')))/2)):void 0), ((ticks["x"]["length"])?(space += (op('xTickLength')??(op('tickLength'))), ((labels["x"]["length"])?(space += (op('xLabelPadding')+((op('xLabelFontSize')??(op('fontSize')))))):void 0)):void 0), space; var space,xAxis}), yAxisSpace = null, getYAxisSpace = (function() {return space = op('yAxisPadding'), yAxis = op('yAxis'), (((yAxis||((op('axis')&&(((yAxis ?? null) === null))))))?(space += ((op('yAxisWidth')??(op('axisWidth')))/2)):void 0), ((ticks["y"]["length"])?(space += (op('yTickLength')??(op('tickLength'))), ((labels["y"]["length"])?(ctx = getCanvasContext('yLabel'), space += (op('yLabelPadding')+(_z_.reduce((labels["y"]),(function(a,b,c) {return ((x, y) => y > x ? y : x)(a,(getTextWidth(ctx,b))); }),0)))):void 0)):void 0), yAxisSpace = space; var space,yAxis,ctx}), getTitle = (function(dim) {return title = op((dim+'Title')), (((((dim==='x')||((dim==='y')))&&(((title ?? null) === null))))?(vbleName = (_marks["0"])?.[dim], ((((typeof vbleName === 'string')&&(((vbleName["0"])==='~'))))?(title = vbleName["slice"](1)):void 0)):((title===false))?(title = null):void 0), title; var title,vbleName}), getTitleSpace = (function(dim) {return (((getTitle(dim) ?? null) === null)?0:((((op((dim+'TitleFontSize')))??(op('fontSize')))+(op((dim+'TitlePadding')))))); }), getSideSpace = (function(side) {return (((!yClean)&&((op('yAxisPosition')===side)))?(((yAxisSpace??(getYAxisSpace()))+(getTitleSpace('y')))):0); }), getTopSpace = (function() {return (((op('xAxisPosition')==='bottom')||xClean)?(getTitleSpace('plot')):((getXAxisSpace()+(getTitleSpace('x'))))); }), getBottomSpace = (function() {return (xClean?(0):((op('xAxisPosition')==='bottom'))?((getXAxisSpace()+(getTitleSpace('x')))):true?(getTitleSpace('plot')):void 0); }), paneSpaceOp = op('paneSpace'), [topSpace,rightSpace,bottomSpace,leftSpace,] = ((Array.isArray(paneSpaceOp)?paneSpaceOp:(_z_.empties(4)["fill"](paneSpaceOp)))), topSpace = topSpace ?? (getTopSpace()), rightSpace = rightSpace ?? (getSideSpace('right')), bottomSpace = bottomSpace ?? (getBottomSpace()), leftSpace = leftSpace ?? (getSideSpace('left')), plotSpace = fourOption(_options,'plotSpace'), width = null, height = null, paneWidth = null, paneHeight = null, setWidthFromPaneWidth = (function() {return width = ((((((plotSpace["3"])+leftSpace)+paneWidth)+rightSpace)+(plotSpace["1"]))), (((legendOut&&legendWidth))?(width += (legendWidth+legendGap)):void 0); }), setHeightFromPaneHeight = (function() {return height = ((((plotSpace["0"])+topSpace)+(plotSpace["2"]))+(((x, y) => y > x ? y : x)((paneHeight+bottomSpace),((legendOut?legendHeight:0))))); }), setPaneHeightFromHeight = (function() {return paneHeight = (((((height-(plotSpace["0"]))-topSpace)-bottomSpace)-(plotSpace["2"]))); }), ((((op('width')==='preserve')&&((op('height')==='preserve'))))?((e => {throw e})(Error('width and height are both "preserve"'))):void 0), ((op('setPaneSize'))?(paneWidth = op('width'), paneHeight = op('height'), (((paneHeight==='preserve'))?(paneHeight = ((paneWidth/xRange)*yRange)):((paneWidth==='preserve'))?(paneWidth = ((paneHeight/yRange)*xRange)):void 0), setWidthFromPaneWidth(), setHeightFromPaneHeight()):true?(width = op('width'), height = op('height'), (((width!=='preserve'))?(paneWidth = (((((width-(plotSpace["3"]))-leftSpace)-rightSpace)-(plotSpace["1"]))), (((legendOut&&legendWidth))?(paneWidth -= (legendWidth+legendGap)):void 0), (((height==='preserve'))?(paneHeight = ((paneWidth/xRange)*yRange), setHeightFromPaneHeight()):true?(setPaneHeightFromHeight()):void 0)):true?(setPaneHeightFromHeight(), paneWidth = ((paneHeight/yRange)*xRange), setWidthFromPaneWidth()):void 0)):void 0), (((paneWidth<=0))?((e => {throw e})(Error('pane width is less than or equal to 0'))):void 0), (((paneHeight<=0))?((e => {throw e})(Error('pane height is less than or equal to 0'))):void 0), xReverse = op('xReverse'), yReverse = op('yReverse'), xScale = (xReverse?(function(a,b,c) {return (((xMax-a)/xRange)*paneWidth); }):(function(a,b,c) {return (((a-xMin)/xRange)*paneWidth); })), yScale = (yReverse?(function(a,b,c) {return (-(((yMax-a)/yRange)*paneHeight)); }):(function(a,b,c) {return (-(((a-yMin)/yRange)*paneHeight)); })), xTransform = (function(val) {return ((((!(typeof val === 'number'))&&(dataMaps["x"]["size"])))?(val = (dataMaps["x"])["get"](val)):void 0), ((xScale(val)+leftSpace)+(this["xOffset"])); }), yTransform = (function(val) {return ((((!(typeof val === 'number'))&&(dataMaps["y"]["size"])))?(val = (dataMaps["y"])["get"](val)):void 0), (((yScale(val)+topSpace)+paneHeight)-(this["yOffset"])); }), ((_options["_outerContainer"])?(container = _z_.$g(), outerContainer = (_options["_outerContainer"])):true?(container = _z_.prop(_z_.style(_z_.style(_z_.style(_z_.style(_z_.style(_z_.attr(_z_.$svg(),'viewBox',(((('0 0 '+width)+' ')+height))),'cursor','default'),'-moz-user-select','none'),'-webkit-user-select','none'),'-ms-user-select','none'),'user-select','none'),'__tp__',(({"outerContainer":true,"updatable":([]),"state":_state,}))), (((op('fit')!=='preserve'))?(_z_.attr(_z_.attr(container,'width',width),'height',height)):void 0), outerContainer = container):void 0), ((opClass) => {return (((!((opClass ?? null) === null)))?(_z_.addClass(container,opClass)):void 0); })(op('class')), ((bgrd) => {return cornerRadius = op('cornerRadius'), (((!((cornerRadius ?? null) === null)))?(_z_.attr(bgrd,'rx',cornerRadius)):void 0); var cornerRadius})(setAttr(_z_.attr(_z_.attr(_z_.insert(container,(_z_.$rect())),'width',width),'height',height),'fill','background')), gPlot = _z_.insert(container,(_z_.$g())), (() => {return shift = (((legendPosition==='out-left')&&legendWidth)?((legendWidth+legendGap)):0), _z_.attr(gPlot,'transform',((((('translate('+(((plotSpace["3"])+shift)))+' ')+(plotSpace["0"]))+')'))); var shift})(), setAttr(setAttr(setAttr(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.insert(gPlot,(_z_.$rect())),'width',paneWidth),'height',paneHeight),'x',leftSpace),'y',topSpace),'fill','paneBackground'),'stroke-width','paneBorderWidth'),'stroke','paneBorderColor'), paneClipId = null, ((op('clip'))?(paneClipId = ('pane-clip-'+clipCount), clipCount += 1, _z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.insert(_z_.attr(_z_.insert(_z_.insert(gPlot,(_z_.$defs())),(_z_.$clipPath())),'id',paneClipId),(_z_.$rect())),'width',paneWidth),'height',paneHeight),'x',leftSpace),'y',topSpace)):void 0), (_z_x => {for (let dim of _z_x) {let dimGrid,gGrid; ((ticks[dim]["length"])?(dimGrid = op((dim+'Grid')), (((dimGrid||((op('grid')&&(((dimGrid ?? null) === null))))))?(gGrid = _z_.attr(setDimAttr(setDimAttr(setDimAttr(_z_.insert(gPlot,(_z_.$g())),dim,'stroke-width','gridWidth'),dim,'stroke','gridColor'),dim,'stroke-opacity','gridOpacity'),'transform',((((('translate('+(leftSpace))+' ')+((topSpace+paneHeight)))+')'))), (_z_x => {for (let val of _z_x) {let x1,x2,y1,y2; (((dim==='x'))?(x1 = xScale(val), x2 = x1, y1 = 0, y2 = (-paneHeight)):true?(x1 = 0, x2 = paneWidth, y1 = yScale(val), y2 = y1):void 0), _z_.into(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.$line(),'x1',x1),'x2',x2),'y1',y1),'y2',y2),gGrid)} return _z_x})((ticks[dim]))):void 0)):void 0)} return _z_x})(usedDims), (_z_x => {for (let dim of _z_x) {let xDim,top,bottom,right,left,xAxisPadding,yAxisPadding,xShiftWrap,yShiftWrap,gWrap,axisUsed,halfAxisWidth,dimAxis,tickLength,labelPadding,labelRotate; xDim = (dim==='x'), top = (xDim&&((op('xAxisPosition')==='top'))), bottom = (xDim&&((!top))), right = ((!xDim)&&((op('yAxisPosition')==='right'))), left = (!(xDim||right)), xAxisPadding = op('xAxisPadding'), yAxisPadding = op('yAxisPadding'), xShiftWrap = (leftSpace+((right?((paneWidth+yAxisPadding)):((left?((-yAxisPadding)):0))))), yShiftWrap = (topSpace+((top?((-xAxisPadding)):((bottom?((paneHeight+xAxisPadding)):paneHeight))))), gWrap = _z_.attr(setFont(_z_.attr(_z_.attr(_z_.insert(gPlot,(_z_.$g())),'text-anchor',((xDim?(op('xLabelAlign')):((left?'end':'start'))))),'dominant-baseline',((xDim?((bottom?'hanging':'auto')):(op('yLabelAlign'))))),((dim+'Label'))),'transform',((((('translate('+xShiftWrap)+' ')+yShiftWrap)+')'))), axisUsed = false, halfAxisWidth = 0, dimAxis = op((dim+'Axis')), (((dimAxis||((op('axis')&&(((dimAxis ?? null) === null))))))?(axisUsed = true, ((line) => {return _z_.into(_z_.attr(setDimAttr(setDimAttr(setDimAttr(line,dim,'stroke-width','axisWidth'),dim,'stroke','axisColor'),dim,'stroke-opacity','axisOpacity'),((dim+'2')),((xDim?paneWidth:((-paneHeight))))),gWrap), halfAxisWidth = (_z_.attr(line,'stroke-width')/2); })(_z_.$line())):void 0), tickLength = (op((dim+'TickLength'))??(op('tickLength'))), labelPadding = op((dim+'LabelPadding')), labelRotate = op((dim+'LabelRotate')), (_z_x => {let _z_i = -1; for (let val of _z_x) {let i = ++_z_i; let gTick; gTick = _z_.attr(_z_.insert(gWrap,(_z_.$g())),'transform',(((dim==='x')?((((('translate('+(xScale(val)))+' ')+((top?((-halfAxisWidth)):halfAxisWidth)))+')')):((((('translate('+((left?((-halfAxisWidth)):halfAxisWidth)))+' ')+(yScale(val)))+')'))))), _z_.into(_z_.attr(setDimAttr(setDimAttr(setDimAttr(_z_.$line(),dim,'stroke-width','tickWidth'),dim,'stroke','tickColor'),dim,'stroke-opacity','tickOpacity'),((xDim?'y2':'x2')),(((bottom||right)?tickLength:((-tickLength))))),gTick), ((labels[dim]["length"])?((() => {return labelShift = (tickLength+labelPadding), labelOffset = op((dim+'LabelOffset')), lbl = _z_.attr(_z_.attr(_z_.text(_z_.$text(),(labels[dim][i])),((xDim?'y':'x')),(((bottom||right)?labelShift:((-labelShift))))),((xDim?'x':'y')),((xDim?labelOffset:((-labelOffset))))), (((!((labelRotate ?? null) === null)))?(center = labelShift, (xDim?(center += ((op((dim+'LabelFontSize'))??(op('fontSize')))/2)):void 0), _z_.attr(lbl,'transform',((xDim?((((('rotate('+labelRotate)+',0,')+((top?((-center)):center)))+')')):((((('rotate('+labelRotate)+',')+((left?((-center)):center)))+',0)')))))):void 0), _z_.into(lbl,gTick); var labelShift,labelOffset,lbl,center})()):void 0)} return _z_x})((ticks[dim])), (() => {return dimTitle = getTitle(dim), (((!((dimTitle ?? null) === null)))?((xDim?(x = op('xTitleOffset'), textAnchor = op('xTitleAlign'), (((textAnchor==='end'))?(x += paneWidth):((textAnchor!=='start'))?(x += (paneWidth/2), textAnchor = 'middle'):void 0), dominantBaseline = (bottom?'hanging':'auto'), y = (op('xTitlePadding')+halfAxisWidth), (((ticks[dim]["length"]))?(y += tickLength):void 0), (((labels[dim]["length"]))?(y += (labelPadding+((op('xLabelFontSize')??(op('fontSize')))))):void 0), (top?(y *= (-1)):void 0), rotate = null):true?(x = ((op('yTitlePadding')+((yAxisSpace??(getYAxisSpace()))))-(yAxisPadding)), (left?(x *= (-1)):void 0), textAnchor = op('yTitleAlign'), y = (((textAnchor==='start'))?(0):((textAnchor==='end'))?((-paneHeight)):true?((-(paneHeight/2))):void 0), dominantBaseline = (left?'auto':'hanging'), rotate = (((((('rotate('+((-90)))+' ')+x)+' ')+y)+')')):void 0), _z_.into(setFont(setUnlessNullish(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.text(_z_.$text(),dimTitle),'x',x),'y',y),'text-anchor',textAnchor),'dominant-baseline',dominantBaseline),'transform',rotate),((dim+'Title'))),gWrap)):void 0); var dimTitle,x,textAnchor,dominantBaseline,y,rotate})()} return _z_x})(usedDims), ((plotTitle) => {return (((!((plotTitle ?? null) === null)))?(top = ((op('xAxisPosition')==='bottom')||xClean), padding = op('plotTitlePadding'), align = op('plotTitleAlign'), _z_.into(setFont(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.text(_z_.$text(),plotTitle),'x',(((((align==='start'))?((leftSpace-((((op('yAxisPosition')==='left')&&((!yClean)))?((yAxisSpace??(getYAxisSpace()))):0)))):((align==='end'))?(((leftSpace+paneWidth)+((((op('yAxisPosition')==='right')&&((!yClean)))?((yAxisSpace??(getYAxisSpace()))):0)))):true?((((leftSpace+paneWidth)+rightSpace)/2)):void 0)+(op('plotTitleOffset'))))),'y',((top?((topSpace-padding)):(((topSpace+paneHeight)+padding))))),'text-anchor',align),'dominant-baseline',((top?'auto':'hanging'))),'plotTitle'),gPlot)):void 0); var top,padding,align})(getTitle('plot')), ({updatable,} = (outerContainer["__tp__"])), finishMark = (function(elm,mk,channels,i,isSubplot) {return (((!isSubplot))?(setUnlessNullish(setUnlessNullish(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.attr(elm,'fill',(channels["fill"](i))),'fill-opacity',(channels["fillOpacity"](i))),'stroke',(channels["stroke"](i))),'stroke-opacity',(channels["strokeOpacity"](i))),'stroke-width',(channels["strokeWidth"](i))),'stroke-linecap',(channels["strokeCap"](i))),'stroke-dasharray',(channels["strokeDash"](i)))):void 0), c = channels['class'](i), (((!((c ?? null) === null)))?(_z_.addClass(elm,c)):void 0), nm = channels["name"](i), (((!((nm ?? null) === null)))?(_z_.attr(elm,'data-tp-name',nm)):void 0), ds = ((mk["data"])??_dataset), (_z_x => {for (let eventType of _z_x) {(((!(((mk[eventType]) ?? null) === null)))?(elm["addEventListener"](eventType,(((i===null)?((mk[eventType])["bind"](elm,ds,null)):((mk[eventType])["bind"](elm,(ds[i]),i)))))):void 0)} return _z_x})(handlerChannelNames); var c,nm,ds}), gMarks = setAttr(setAttr(setAttr(_z_.attr(_z_.insert(gPlot,(_z_.$g())),'font-size',((op('fontSize')+'px'))),'font-family','fontFamily'),'font-style','fontStyle'),'font-weight','fontWeight'), (paneClipId?(_z_.attr(gMarks,'clip-path',((('url(#'+paneClipId)+')')))):void 0), (_z_x => {for (let mk of _z_x) {let type,channels,xOffset,yOffset,size,nObs,presentInds,schemes,markUpdate,x,xx,y,yy,insertMark,basic__tp__,colorTransform,textElm,addNote,w,h,pieData; ({type,} = mk), channels = markChannels["get"](mk), ({xOffset,yOffset,size,} = channels), nObs = markObs["get"](mk), presentInds = markPresentInds["get"](mk), schemes = markSchemes["get"](mk), markUpdate = markUpdates["get"](mk), x = (function(i) {return ((xScale(channels["x"](i))+leftSpace)+(xOffset(i))); }), xx = (function(i) {return ((xScale(channels["xx"](i))+leftSpace)+(xOffset(i))); }), y = (function(i) {return (((yScale(channels["y"](i))+topSpace)+paneHeight)-(yOffset(i))); }), yy = (function(i) {return (((yScale(channels["yy"](i))+topSpace)+paneHeight)-(yOffset(i))); }), insertMark = (function(elm,i) {return (((!channels["listen"](i)))?(_z_.attr(elm,'pointer-events','none')):void 0), ((channels["front"](i)<0)?(_z_.insert(gMarks,elm,(function(a,b,c) {return (gMarks["firstChild"]); }))):(_z_.insert(gMarks,elm))); }), basic__tp__ = ((((markUpdate["has"]('fill')||(markUpdate["has"]('stroke'))))?(colorTransform = (function(val,fillOrStroke) {return dm = (dataMaps[fillOrStroke])["get"](mk), ((((!(typeof val === 'number'))&&(dm?.['size'])))?(val = dm["get"](val)):void 0), info = (schemes[fillOrStroke]), (((!info))?(val):(Array.isArray((info["scheme"])))?((info["scheme"][val])):true?(mn = info['min'], mx = info['max'], (info["scheme"])(((val-mn)/((mx-mn))))):void 0); var dm,info,mn,mx})):void 0), (function(elm,i,isSingleMarkType) {return __tp__ = ((o,v1,v2,v3,v4,v5,v6,v7) => {o.outerContainer=v1;o.i=v2;o.xTransform=v3;o.yTransform=v4;o.colorTransform=v5;o.type=v6;o.markUpdate=v7;return o})(({}),outerContainer,i,xTransform,yTransform,colorTransform,type,markUpdate), (((type!=='path'))?((__tp__["xOffset"]) = xOffset(i), (__tp__["yOffset"]) = yOffset(i), (((!isSingleMarkType))?((__tp__["x"]) = x(i), (__tp__["y"]) = y(i)):void 0)):void 0), ((transitionMarkNames["has"](type))?((__tp__["delay"]) = channels["delay"](i), (__tp__["duration"]) = channels["duration"](i), (__tp__["ease"]) = channels["ease"](i)):void 0), ((o,v1) => {o.__tp__=v1;return o})(elm,__tp__), __tp__; var __tp__})), textElm = (function(i,ti,xi,yi,defaultCenter) {return elm = setUnlessNullish(setUnlessNullish(setUnlessNullish(_z_.attr(_z_.attr(_z_.text(_z_.$text(),ti),'text-anchor',((defaultCenter?(((_options["hAlign"])??'middle')):(channels["hAlign"](i))))),'dominant-baseline',(channels["vAlign"](i))),'font-family',(channels["fontFamily"](i))),'font-style',(channels["fontStyle"](i))),'font-weight',(channels["fontWeight"](i))), fontSize = channels["fontSize"](i), (((!((fontSize ?? null) === null)))?(_z_.attr(elm,'font-size',((fontSize+'px')))):void 0), setTextTransform(elm,xi,yi,(channels["rotate"](i))); var elm,fontSize}), addNote = (function(markElm,i,xi,yi,defaultCenter) {return ((channels["note"])?(ti = channels["note"](i), ((_z_.string(ti))?(xi += channels["noteXOffset"](i), yi -= channels["noteYOffset"](i), colorChannel = ((nc) => {return (((nc==='_fill')||((nc==='_stroke')))?(nc["slice"](1)):'noteColor'); })(channels["noteColor"]()), opacityChannel = ((nOp) => {return (((nOp==='_fillOpacity')||((nOp==='_strokeOpacity')))?(nOp["slice"](1)):'noteOpacity'); })(channels["noteOpacity"]()), noteElm = textElm(i,ti,xi,yi,defaultCenter), markElm["after"](noteElm), _z_.attr(_z_.attr(_z_.attr(noteElm,'stroke','none'),'fill',(channels[(colorChannel)](i))),'fill-opacity',(channels[(opacityChannel)](i)))):void 0)):void 0); var ti,colorChannel,opacityChannel,noteElm}), ((((type==='point')||((type==='circle'))))?((() => {return areaScale = markAreaInfo["get"](mk)['scale'], (_z_x => {for (let i of _z_x) {let xi,yi,ai,si,elm,__tp__; xi = x(i), yi = y(i), ai = areaScale(channels["area"](i)), (((type==='point'))?(si = channels["shape"](i), elm = pointSymbol((({"shape":si,"area":ai,"x":xi,"y":yi,})))):true?(elm = setTransitionInitial(_z_.attr(_z_.attr(_z_.attr(_z_.$circle(),'cx',xi),'cy',yi),'r',(_z_.sqrt((ai/(Math["PI"]))))),channels,i)):void 0), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["areaTransform"]) = areaScale, (((type==='point'))?((__tp__["area"]) = ai, (__tp__["shape"]) = si, (__tp__["shapeTransform"]) = (function(val) {return dm = (dataMaps["shape"])["get"](mk), ((((!(typeof val === 'number'))&&(dm?.['size'])))?(val = dm["get"](val)):void 0), (schemes["shape"]["scheme"][val]); var dm})):void 0), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,xi,yi)} return _z_x})(presentInds); var areaScale})()):((type==='segment'))?((_z_x => {for (let i of _z_x) {let xxi,yyi,elm; xxi = xx(i), yyi = yy(i), elm = _z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.$line(),'x1',(x(i))),'y1',(y(i))),'x2',xxi),'y2',yyi), ((markUpdate["size"])?(basic__tp__(elm,i), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,xxi,yyi)} return _z_x})(presentInds)):((type==='rect'))?(((mk["pixels"])?(w = (channels["width"]), h = (channels["height"])):true?(w = (function(i) {return ((channels["width"](i)/xRange)*paneWidth); }), h = (function(i) {return ((channels["height"](i)/yRange)*paneHeight); })):void 0), (_z_x => {for (let i of _z_x) {let xi,yi,wi,hi,xiMin,yiMin,cxi,cyi,sp,elm,__tp__; xi = x(i), yi = y(i), wi = _z_.abs((+w(i))), hi = _z_.abs((+h(i))), ((mk["corner"])?(xiMin = (xReverse?((xi-wi)):xi), yiMin = (yReverse?yi:((yi-hi))), cxi = (xiMin+((wi/2))), cyi = (yiMin+((hi/2)))):true?(xiMin = (xi-((wi/2))), yiMin = (yi-((hi/2))), cxi = xi, cyi = yi):void 0), (((!(((mk["subplot"]) ?? null) === null)))?(sp = tp["option"]((({"width":wi,"height":hi,"_outerContainer":outerContainer,}))), (mk["subplot"])['call'](sp,(channels["subplot"](i)),i), finishMark(_z_.attr(insertMark((sp["plot"]()),i),'transform',((((('translate('+xiMin)+' ')+yiMin)+')'))),mk,channels,i,'subplot')):true?(elm = setTransitionInitial(setUnlessNullish(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.$rect(),'x',xiMin),'y',yiMin),'width',wi),'height',hi),'rx',(channels["cornerRadius"](i))),channels,i), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["corner"]) = (mk["corner"]), (__tp__["width"]) = wi, (__tp__["height"]) = hi, ((o,v1,v2) => {o.xReverse=v1;o.yReverse=v2;return o})(__tp__,xReverse,yReverse), ((mk["pixels"])?((__tp__["widthFunc"]) = (function(v) {return _z_.abs((+v)); }), (__tp__["heightFunc"]) = (function(v) {return _z_.abs((+v)); })):true?((__tp__["widthFunc"]) = (function(v) {return _z_.abs(((v/xRange)*paneWidth)); }), (__tp__["heightFunc"]) = (function(v) {return _z_.abs(((v/yRange)*paneHeight)); })):void 0), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,cxi,cyi)):void 0)} return _z_x})(presentInds)):((((type==='hLink'))||((type==='vLink'))))?((_z_x => {for (let i of _z_x) {let xxi,yyi,d,elm,__tp__; xxi = xx(i), yyi = yy(i), d = d3[(((type==='hLink')?'linkHorizontal':'linkVertical'))]()((({"source":([(x(i)),(y(i))]),"target":([xxi,yyi]),}))), elm = _z_.attr(_z_.$path(),'d',d), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["xx"]) = xxi, (__tp__["yy"]) = yyi, updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,xxi,yyi)} return _z_x})(presentInds)):((type==='edge'))?((_z_x => {for (let i of _z_x) {let xi,yi,xxi,yyi,si,cwi,elm,__tp__; xi = x(i), yi = y(i), xxi = xx(i), yyi = yy(i), si = size(i), cwi = _z_.number(_z_.boolean(channels["clockwise"](i))), elm = _z_.attr(_z_.$path(),'d',(dEdge(({"x":xi,"y":yi,"xx":xxi,"yy":yyi,"size":si,"clockwise":cwi,})))), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["xx"]) = xxi, (__tp__["yy"]) = yyi, (__tp__["size"]) = si, (__tp__["clockwise"]) = cwi, updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,xxi,yyi)} return _z_x})(presentInds)):((type==='text'))?((_z_x => {for (let i of _z_x) {let elm,__tp__; elm = setTransitionInitial(textElm(i,(channels['text'](i)),(x(i)),(y(i))),channels,i), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["rotate"]) = channels["rotate"](i), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i)} return _z_x})(presentInds)):((type==='arc'))?(((channels["pie"])?(pieData = d3["pie"]()["startAngle"]((channels["startAngle"]()))["endAngle"]((channels["endAngle"]()))["padAngle"]((channels["padAngle"]()))["sortValues"](((((((mk["pieSort"]) ?? null) === null))?null:(((mk["pieSort"])==='desc'))?(function(a,b,c) {return (b-a); }):(((mk["pieSort"])==='asc'))?(function(a,b,c) {return (a-b); }):(((typeof (mk["pieSort"]))==='function'))?(mk["pieSort"]):true?((e => {throw e})(Error('mark-arc, invalid pieSort option'))):void 0)))(((_z_x => {let _z_i = -1; let _z_m = []; for (let i of _z_x) {++_z_i; _z_m[_z_i] = (channels["pie"](i))} return _z_m})(presentInds)))):void 0), (_z_x => {let _z_i = -1; for (let i of _z_x) {let j = ++_z_i; let xi,yi,arcObj,elm,cxi,cyi; xi = x(i), yi = y(i), arcObj = d3["arc"]()["innerRadius"]((channels["innerRadius"](i)))["outerRadius"]((channels["outerRadius"](i)))["padRadius"]((channels["padRadius"](i)))["cornerRadius"]((channels["cornerRadius"](i))), ((channels["pie"])?(arcObj["startAngle"]((pieData[j]["startAngle"]))["endAngle"]((pieData[j]["endAngle"]))["padAngle"]((pieData[j]["padAngle"]))):true?(arcObj["startAngle"]((channels["startAngle"](i)))["endAngle"]((channels["endAngle"](i)))["padAngle"]((channels["padAngle"](i)))):void 0), elm = _z_.$path(), finishMark(_z_.attr(_z_.attr(insertMark(elm,i),'d',(arcObj())),'transform',((((('translate('+xi)+' ')+yi)+')'))),mk,channels,i), [cxi,cyi,] = arcObj["centroid"](), addNote(elm,i,((xi+cxi)),((yi+cyi)))} return _z_x})(presentInds)):(((type==='hBar')||((type==='vBar'))))?((_z_x => {for (let i of _z_x) {let xi,yi,si,xxi,nxi,nyi,h,bar,yyi,w,elm,__tp__; xi = x(i), yi = y(i), si = size(i), (((type==='hBar'))?(xxi = xx(i), nxi = ((x, y) => y > x ? y : x)(xi,xxi), nyi = yi, h = ((si/yRange)*paneHeight), bar = hBarValues((({"x":xi,"xx":xxi,"y":yi,"h":h,})))):true?(nxi = xi, yyi = yy(i), nyi = ((x, y) => y < x ? y : x)(yi,yyi), w = ((si/xRange)*paneWidth), bar = vBarValues((({"x":xi,"y":yi,"yy":yyi,"w":w,})))):void 0), elm = setTransitionInitial(setUnlessNullish(_z_.attr(_z_.attr(_z_.attr(_z_.attr(_z_.$rect(),'x',(bar["xCorner"])),'y',(bar["yCorner"])),'width',(bar["width"])),'height',(bar["height"])),'rx',(channels["cornerRadius"](i))),channels,i), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), (__tp__["size"]) = si, (((type==='hBar'))?((__tp__["xx"]) = xxi, (__tp__["heightFunc"]) = (function(a,b,c) {return (((this["size"])/yRange)*paneHeight); })):true?((__tp__["yy"]) = yyi, (__tp__["widthFunc"]) = (function(a,b,c) {return (((this["size"])/xRange)*paneWidth); })):void 0), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i), addNote(elm,i,nxi,nyi)} return _z_x})(presentInds)):((type==='path'))?((_z_x => {for (let i of _z_x) {let elm,__tp__; elm = _z_.attr(setUnlessNullish(_z_.attr(_z_.$path(),'vector-effect','non-scaling-stroke'),'d',(channels["path"](i))),'transform',((((((((('translate('+((xScale(0)+leftSpace)))+',')+(((yScale(0)+topSpace)+paneHeight)))+') scale(')+(((paneWidth/xRange)*((xReverse?((-1)):1)))))+',')+(((paneHeight/yRange)*((yReverse?1:((-1)))))))+')'))), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,i), updatable["push"](elm)):void 0), finishMark(insertMark(elm,i),mk,channels,i)} return _z_x})(presentInds)):true?((() => {return curveType = ((mk["curve"])??'linear'), (((!curveTypes["has"](curveType)))?((e => {throw e})(Error(((('mark-'+type)+', invalid curve type: ')+(mk["curve"]))))):void 0), lineBandArgs = ((o,v1,v2,v3,v4,v5,v6,v7,v8) => {o.nObs=v1;o.type=v2;o.curveType=v3;o.presentInds=v4;o.x=v5;o.xx=v6;o.y=v7;o.yy=v8;return o})(({"missing":(mk["missing"]),}),nObs,type,curveType,presentInds,x,xx,y,yy), elm = _z_.$path(), ((markUpdate["size"])?(__tp__ = basic__tp__(elm,null,true), Object.assign(__tp__,lineBandArgs), updatable["push"](elm)):void 0), finishMark(_z_.attr(insertMark(elm),'d',(dLineBand(lineBandArgs))),mk,channels,null), ((channels["note"])?(((((type==='line')&&((curveType["slice"](((-6)))==='Closed'))))?([cx,cy,] = polygonCentroid((_z_x => {let _z_i = -1; let _z_m = []; for (let i of _z_x) {++_z_i; _z_m[_z_i] = ([(x(i)),(y(i))])} return _z_m})(presentInds)), addNote(elm,null,cx,cy,'defaultCenter')):true?(maxInd = _z_.max(presentInds), fxi = x(maxInd), fyi = y(maxInd), (((type==='line'))?(addNote(elm,null,fxi,fyi)):((type==='hBand'))?(addNote(elm,null,fxi,(((fyi+(yy(maxInd)))/2)))):true?(addNote(elm,null,(((fxi+(xx(maxInd)))/2)),fyi)):void 0)):void 0)):void 0); var curveType,lineBandArgs,elm,__tp__,cx,cy,maxInd,fxi,fyi})()):void 0)} return _z_x})(_marks), (legendWidth?((() => {return (legendOut?(xPosn = ((legendPosition==='out-left')?(plotSpace["3"]):(((width-(plotSpace["1"]))-legendWidth))), yPosn = ((plotSpace["0"])+topSpace)):true?(xPosn = (((legendPosition["endsWith"]('left'))?((leftSpace+legendGap)):(legendPosition["endsWith"]('right'))?((((leftSpace+paneWidth)-legendGap)-legendWidth)):true?(((leftSpace+((paneWidth/2)))-((legendWidth/2)))):void 0)), yPosn = (((legendPosition["startsWith"]('top'))?((topSpace+legendGap)):(legendPosition["startsWith"]('bottom'))?((((topSpace+paneHeight)-legendGap)-legendHeight)):true?(((topSpace+((paneHeight/2)))-((legendHeight/2)))):void 0))):void 0), _z_.attr(gLegend,'transform',((((('translate('+xPosn)+' ')+yPosn)+')'))), _z_.insert((legendOut?container:gPlot),gLegend); var xPosn,yPosn})()):void 0), addToTarget(container,target)):void 0); var _marks,_dataset,_options,_state,op,setAttr,setDimAttr,setFont,getCanvasContext,channelData,dataMaps,limitsOp,xMinOp,xMaxOp,yMinOp,yMaxOp,xMin,xMax,yMin,yMax,xMinReqd,xMaxReqd,yMinReqd,yMaxReqd,markChannels,markObs,markSchemes,markAreaInfo,markPresentInds,markUpdates,gLegend,legendWidth,legendHeight,legendPosition,legendOut,legendGap,xMag,yMag,xRange,yRange,xClean,yClean,usedDims,ticks,labels,getXAxisSpace,yAxisSpace,getYAxisSpace,getTitle,getTitleSpace,getSideSpace,getTopSpace,getBottomSpace,paneSpaceOp,topSpace,rightSpace,bottomSpace,leftSpace,plotSpace,width,height,paneWidth,paneHeight,setWidthFromPaneWidth,setHeightFromPaneHeight,setPaneHeightFromHeight,xReverse,yReverse,xScale,yScale,xTransform,yTransform,container,outerContainer,gPlot,paneClipId,updatable,finishMark,gMarks}), tp["prototype"]['option'] = (function(newOptions) {return ((((newOptions ?? null) === null))?((this["_options"]) = ({})):true?(Object.assign((this["_options"]),newOptions)):void 0), this; }), tp["prototype"]['data'] = (function(d) {return ((this["_dataset"])?((e => {throw e})(Error('dataset already attached'))):void 0), (this["_dataset"]) = getDataset(d), this; }), tp["prototype"]['state'] = (function(s) {return ((((this["_state"])!==null))?((e => {throw e})(Error('initial state already set'))):void 0), (this["_state"]) = cloneDeep(s), this; }), tp["prototype"]['each'] = (function(d,f) {return (((!Array.isArray(d)))?((e => {throw e})(Error('array expected'))):void 0), d["forEach"](f,this), this; }), tp["prototype"]['call'] = (function(f,...rest) {return f['apply'](this,rest), this; }), tp["prototype"]['layer'] = (function(...rest) {return ((((rest["length"])>2))?(data = tp['group']((rest["0"]),(rest["1"])), f = (rest["2"])):true?([data,f,] = rest, (((!Array.isArray(data)))?((e => {throw e})(Error('array expected'))):void 0)):void 0), (_z_x => {let _z_i = -1; for (let row of _z_x) {let index = ++_z_i; f['call'](this,(row['group']),(row["name"]),index)} return _z_x})(data), this; var data,f}), (_z_x => {for (let name of _z_x) {tp["prototype"][name] = (function(...rest) {return ((((rest["length"])===0))?((e => {throw e})(Error('at least one argument expected'))):(((rest["length"])===1))?(options = (rest["0"])):true?([x,y,options,] = rest):void 0), mkObj = ({}), ((((rest["length"])>1))?(((o,v1,v2) => {o.x=v1;o.y=v2;return o})(mkObj,x,y)):void 0), Object.assign(mkObj,options), (((!(((mkObj["data"]) ?? null) === null)))?((mkObj["data"]) = getDataset((mkObj["data"]))):void 0), (mkObj["type"]) = name, (this["_marks"])["push"](mkObj), this; var options,x,y,mkObj})} return _z_x})(markNames), (_z_x => {for (let name of _z_x) {(tp[name]) = (function(...rest) {return po = (new (tp)()), (po[name])['apply'](po,rest), po; var po})} return _z_x})(_z_.array(markNames,'option','data','state','each','call','layer')), (() => {return stackData = (function(data,isHorizontal,ops={}) {return [groupByDim,vbleDim,] = (isHorizontal?(['y','x']):(['x','y'])), groupBy = cropTilde((ops[groupByDim])), vble = cropTilde((ops[vbleDim])), stack = cropTilde((ops["stack"])), offset = ops.offset ?? ('none'), ord = (ops['order']??'none'), missing = ops.missing ?? ('throw'), ({binLimits,} = ops), isGroupBy = (!((groupBy ?? null) === null)), isBinning = (!((binLimits ?? null) === null)), isVble = (!((vble ?? null) === null)), returnRows = (ops["rows"]), binProps = ['lower','upper','middle','range'], (((!isArrayOfObjects(data)))?((e => {throw e})(Error('array of objects/arrays expected'))):void 0), ((((data["length"])===0))?((e => {throw e})(Error('empty data array'))):void 0), ((((stack ?? null) === null))?((e => {throw e})(Error('stack option is required'))):void 0), ((_z_.some(data,(function(a,b,c) {return ((((isGroupBy&&(isInfOrNaN((a[groupBy])))))||((isVble&&(isInfOrNaN((a[vble]))))))||(isInfOrNaN((a[stack])))); })))?((e => {throw e})(Error(nonFiniteMsg))):void 0), (((missing==='skip'))?(data = _z_.filter(data,((function(d) {return (!((((isGroupBy&&((((d[groupBy]) ?? null) === null)))||((isVble&&((((d[vble]) ?? null) === null)))))||((((d[stack]) ?? null) === null))))); }))), ((((data["length"])===0))?((e => {throw e})(Error(allMissingMsg))):void 0)):true?((_z_x => {for (let d of _z_x) {(((isGroupBy&&((((d[groupBy]) ?? null) === null))))?((e => {throw e})(Error((('missing '+groupByDim)+' value')))):void 0), ((((isVble&&((((d[vble]) ?? null) === null)))&&((missing!=='zero'))))?((e => {throw e})(Error((('missing '+vbleDim)+' value')))):void 0), (((((d[stack]) ?? null) === null))?((e => {throw e})(Error((('missing '+stack)+' value')))):void 0)} return _z_x})(data)):void 0), groupInfo = [], getWideRow = (function(gArray,gInfo) {return groupInfo["push"](gInfo), obj = ({}), (isVble?((_z_x => {for (let row of _z_x) {obj[(row[stack])] = (row[vble])} return _z_x})(gArray)):true?(_z_.groupCount(gArray,stack,((function(subCount,subName) {return obj[subName] = subCount; })))):void 0), obj; var obj}), wideData = ((isGroupBy?((isBinning?((_z_x => {let _z_i = -1; let _z_m = []; for (let row of _z_x) {++_z_i; _z_m[_z_i] = (getWideRow((row['bin']),row))} return _z_m})(tp['bin'](data,groupBy,binLimits))):true?(_z_.array(_z_.group(data,groupBy,getWideRow)["values"]())):void 0)):true?([getWideRow(data)]):void 0)), validOrder = (new Set(['appearance','insideOut','none','reverse'])), validOffset = (new Set(['expand','diverging','none','silhouette','wiggle'])), stackNames = _z_.array((new (Set)((_z_.pick(data,stack))))), levels = d3["stack"]()["keys"](stackNames)["value"]((function(a,b,c) {return ((a[b])??0); }))['order'](((((ord==='asc'))?(d3["stackOrderAscending"]):((ord==='desc'))?(d3["stackOrderDescending"]):(validOrder["has"](ord))?(d3[(('stackOrder'+(capitalize(ord))))]):true?((e => {throw e})(Error('invalid stack order'))):void 0)))["offset"]((((validOffset["has"](offset))?(d3[(('stackOffset'+(capitalize(offset))))]):true?((e => {throw e})(Error('invalid stack offset'))):void 0)))(wideData), vbleDimDim = (vbleDim+vbleDim), (returnRows?(result = [], (_z_x => {let _z_i = -1; for (let st of _z_x) {let i = ++_z_i; (_z_x => {let _z_i = -1; for (let grp of _z_x) {let j = ++_z_i; let obj; obj = (({[(vbleDimDim)]:(grp["0"]),[(vbleDim)]:(grp["1"]),"fill":(stackNames[i]),})), (isGroupBy?((isBinning?((_z_x => {for (let p of _z_x) {(obj[p]) = (groupInfo[j][p])} return _z_x})(binProps)):true?((obj[groupByDim]) = (groupInfo[j])):void 0)):void 0), result["push"](obj)} return _z_x})(st)} return _z_x})(levels)):true?(result = ({[(vbleDimDim)]:([]),[(vbleDim)]:([]),"fill":([]),}), (isGroupBy?((isBinning?((_z_x => {for (let p of _z_x) {(result[p]) = []} return _z_x})(binProps)):true?((result[groupByDim]) = []):void 0)):void 0), (_z_x => {let _z_i = -1; for (let st of _z_x) {let i = ++_z_i; (_z_x => {let _z_i = -1; for (let grp of _z_x) {let j = ++_z_i; (result[vbleDimDim])["push"]((grp["0"])), (result[vbleDim])["push"]((grp["1"])), (result["fill"])["push"]((stackNames[i])), (isGroupBy?((isBinning?((_z_x => {for (let p of _z_x) {(result[p])["push"]((groupInfo[j][p]))} return _z_x})(binProps)):true?((result[groupByDim])["push"]((groupInfo[j]))):void 0)):void 0)} return _z_x})(st)} return _z_x})(levels)):void 0), result; var groupByDim,vbleDim,groupBy,vble,stack,offset,ord,missing,binLimits,isGroupBy,isBinning,isVble,returnRows,binProps,groupInfo,getWideRow,wideData,validOrder,validOffset,stackNames,levels,vbleDimDim,result}), (tp["vStack"]) = (function(data,ops={}) {return stackData(data,false,ops); }), (tp["hStack"]) = (function(data,ops={}) {return stackData(data,true,ops); }); var stackData})(), (tp["lookup"]) = (function(data,key,mapFunc) {return mf = ((((typeof mapFunc === 'function'))?(mapFunc):(((mapFunc ?? null) === null))?((function(a,b,c) {return a; })):true?(mapFunc = cropTilde(mapFunc), (function(a,b,c) {return a[mapFunc]; })):void 0)), obj = ({}), (((typeof key === 'function'))?((_z_x => {let _z_i = -1; for (let d of _z_x) {let i = ++_z_i; obj[(key(d,i,data))] = mf(d,i,data)} return _z_x})(data)):true?(key = cropTilde(key), (_z_x => {let _z_i = -1; for (let d of _z_x) {let i = ++_z_i; obj[(d[key])] = mf(d,i,data)} return _z_x})(data)):void 0), obj; var mf,obj}), (_z_x => {for (let method of _z_x) {(tp[method]) = (function(data,...rest) {return (((!Array.isArray(data)))?((e => {throw e})(Error('array expected'))):void 0), nDim = (rest["length"]), (((nDim===0))?((e => {throw e})(Error('at least one grouping property/function expected'))):void 0), result = [], groupNames = [], lastIndex = (nDim-1), props = [], ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; let p; p = cropTilde((rest[i])), (_z_.some(((typeof p === 'function')?(data['map'](p)):(_z_.pick(data,p))),isInfOrNaN)?((e => {throw e})(Error(nonFiniteMsg))):void 0), (props[i]) = p}})(nDim), groupFunc = (function(d,i) {return (_z_x => {for (let kv of _z_x) {(groupNames[i]) = (kv["0"]), (((i===lastIndex))?(result["push"]((((o, m, ...a) => {o[m](...a); return o})(_z_.array(groupNames),"push",(kv["1"]))))):true?(groupFunc((kv["1"]),((i+1)))):void 0)} return _z_x})(((((method==='groupCount')&&((i===lastIndex))))?(_z_.groupCount(d,(props[i]))):true?(_z_.group(d,(props[i]))):void 0)); }), groupFunc(data,0), (_z_x => {let _z_i = -1; for (let row of _z_x) {let j = ++_z_i; let newRow; newRow = ({}), ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; newRow[(((nDim>1)?(('name_'+i)):'name'))] = (row[i])}})(nDim), newRow[(((method==='groupCount')?'count':'group'))] = (row[nDim]), (result[j]) = newRow} return _z_x})(result), result; var nDim,result,groupNames,lastIndex,props,groupFunc})} return _z_x})(['group','groupCount']), (tp["facet"]) = (function(...rest) {return ((((rest["length"])>2))?(data = tp['group']((rest["0"]),(rest["1"])), mapFunc = (rest["2"])):true?([data,mapFunc,] = rest, (((!Array.isArray(data)))?((e => {throw e})(Error('array expected'))):void 0)):void 0), container = _z_.$div(), (_z_x => {let _z_i = -1; for (let row of _z_x) {let index = ++_z_i; let plotObj; plotObj = (new (tp)()), mapFunc['call'](plotObj,(row['group']),(row["name"]),index), plotObj["plot"](container)} return _z_x})(data), ({"plot":(function(a,b,c) {return addToTarget(container,a); }),}); var data,mapFunc,container}), (_z_x => {for (let method of _z_x) {(tp[method]) = (function(data,...rest) {return (((!Array.isArray(data)))?((e => {throw e})(Error('array expected'))):void 0), nDim = ((rest["length"])/2), ((((nDim===0)||((!Number.isInteger(nDim)))))?((e => {throw e})(Error('unexpected number of arguments'))):void 0), accessors = [], limits = [], lowers = [], ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; let p,v,mn,mx,q; p = cropTilde(rest[((2*i))]), (accessors[i]) = ((typeof p === 'function')?p:(function(a,b,c) {return (a[p]); })), v = (_z_x => {let _z_i = -1; let _z_m = []; for (let e of _z_x) {++_z_i; _z_m[_z_i] = (accessors[(i)](e))} return _z_m})(data), ((_z_.some(v,(function(a,b,c) {return (!Number.isFinite(a)); })))?((e => {throw e})(Error('can only bin finite, numeric values'))):void 0), mn = _z_.min(v), mx = _z_.max(v), q = rest[(((2*i)+1))], (((typeof q === 'function'))?(q = q(mn,mx,v)):void 0), (((((((!Array.isArray(q))||(((q["length"])<2)))||(_z_.some(q,(function(a,b,c) {return (!Number.isFinite(a)); }))))||((_z_.min(q)>mn)))||((_z_.max(q)<mx))))?((e => {throw e})(Error('invalid bin limits'))):void 0), q = _z_.order(q), (lowers[i]) = q["shift"](), (limits[i]) = q}})(nDim), result = [], binNames = [], binFunc = (function(d,i) {return cf = (function(a,b,c) {return (accessors[(i)](a)-b); }), (_z_x => {for (let kv of _z_x) {((((Array.isArray((kv["1"]))&&(kv["1"]["length"]))||(((typeof (kv["1"]) === 'number')&&(kv["1"])))))?((binNames[i]) = (kv["0"]), (((i===((nDim-1))))?(result["push"]((((o, m, ...a) => {o[m](...a); return o})(_z_.array(binNames),"push",(kv["1"]))))):true?(binFunc((kv["1"]),((i+1)))):void 0)):void 0)} return _z_x})(((((method==='binCount')&&((i===((nDim-1))))))?(_z_.binCount(d,(limits[i]),cf)):true?(_z_.bin(d,(limits[i]),cf)):void 0)); var cf}), binFunc(data,0), binInfo = [], ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; let m,suffix; m = (new Map([])), suffix = ((nDim>1)?(('_'+i)):''), (_z_x => {let _z_i = -1; for (let lim of _z_x) {let j = ++_z_i; let lowerLim; lowerLim = (j?((limits[i])[((j-1))]):(lowers[i])), m["set"](lim,(({[(('lower'+suffix))]:lowerLim,[(('upper'+suffix))]:lim,[(('middle'+suffix))]:(((lowerLim+lim)/2)),[(('range'+suffix))]:((lim-lowerLim)),})))} return _z_x})((limits[i])), (binInfo[i]) = m}})(nDim), (_z_x => {let _z_i = -1; for (let row of _z_x) {let j = ++_z_i; let newRow; newRow = ({}), ((_z_l) => {for (let _z_i = 0; _z_i < _z_l; _z_i++) {let i = _z_i; Object.assign(newRow,((binInfo[i])["get"]((row[i]))))}})(nDim), newRow[(((method==='binCount')?'count':'bin'))] = (row[nDim]), (result[j]) = newRow} return _z_x})(result), result; var nDim,accessors,limits,lowers,result,binNames,binFunc,binInfo})} return _z_x})(['bin','binCount']), (tp["range"]) = (function(mn,mx,step) {return _z_.array(_z_.to(mn,mx,step)); }), tp['linSpace'] = (function(mn,mx,n) {return _z_.array(_z_.linSpace(mn,mx,n)); }), updateElement = (function(elm,state) {return ({__tp__,} = elm), ({type,} = __tp__), channels = (new Map([])), (_z_x => {for (let chFunc of _z_x) {let ch,func,val; [ch,func,] = chFunc, val = (((((func["length"])<2))?(func(state)):((singleMarkNames["has"](type)&&(xyChannelNames["has"](ch))))?(func):true?(func((elm["__tp__"]["i"]),state)):void 0)), (((!((val ?? null) === null)))?(channels["set"](ch,val)):void 0)} return _z_x})((__tp__["markUpdate"])), channelsHasAnyOf = (function(...rest) {return _z_.some(rest,(function(a,b,c) {return channels["has"](a); })); }), updateXY = (function(...rest) {return (_z_x => {for (let ch of _z_x) {((channels["has"](ch))?((__tp__[ch]) = (__tp__[(((ch["0"])+'Transform'))])(channels["get"](ch))):void 0)} return _z_x})(rest); }), setFrom__tp__ = (function(attrName,ch) {return ((channels["has"](ch))?(elm["setAttribute"](attrName,(__tp__[ch]))):void 0); }), ((channels["has"]('front'))?((() => {return front = _z_.number(channels["get"]('front')), (((front<0))?(_z_.lower(elm)):((front>0))?(_z_.raise(elm)):void 0); var front})()):void 0), ((channels["has"]('listen'))?((channels["get"]('listen')?(elm["removeAttribute"]('pointer-events')):(elm["setAttribute"]('pointer-events','none')))):void 0), (() => {return newTransition = false, (_z_x => {for (let ch of _z_x) {((channels["has"](ch))?((__tp__[ch]) = channels["get"](ch), newTransition = true):void 0)} return _z_x})(['delay','duration','ease']), (newTransition?(setTransition(elm,(__tp__["delay"]),(__tp__["duration"]),(__tp__["ease"]))):void 0); var newTransition})(), (_z_x => {for (let ch of _z_x) {let _attr; _attr = defChannels["get"](ch)['_attr'], (_attr?(elm["setAttribute"]((((_attr===true)?(camelToKebab(ch)):_attr)),(channels["get"](ch)))):void 0)} return _z_x})(channels["keys"]()), ((channels["has"]('fill'))?(elm["setAttribute"]('fill',((__tp__["colorTransform"])(channels["get"]('fill'),'fill')))):void 0), ((channels["has"]('stroke'))?(elm["setAttribute"]('stroke',((__tp__["colorTransform"])(channels["get"]('stroke'),'stroke')))):void 0), (((type==='point'))?(((channelsHasAnyOf('x','y','shape','area'))?(updateXY('x','y'), ((channels["has"]('shape'))?((__tp__["shape"]) = (__tp__["shapeTransform"])(channels["get"]('shape'))):void 0), ((channels["has"]('area'))?((__tp__["area"]) = (__tp__["areaTransform"])(channels["get"]('area'))):void 0), pointSymbol(_z_.chg(_z_.at(__tp__,(['x','y','shape','area'])),'path',elm))):void 0)):((type==='circle'))?(updateXY('x','y'), setFrom__tp__('cx','x'), setFrom__tp__('cy','y'), ((channels["has"]('area'))?(elm["setAttribute"]('r',(_z_.sqrt(((__tp__["areaTransform"])(channels["get"]('area'))/(Math["PI"])))))):void 0)):((type==='text'))?(((channelsHasAnyOf('x','y','rotate'))?(updateXY('x','y'), ((channels["has"]('rotate'))?((__tp__["rotate"]) = channels["get"]('rotate')):void 0), setTextTransform(elm,(__tp__["x"]),(__tp__["y"]),(__tp__["rotate"]))):void 0), ((channels["has"]('fontSize'))?(elm["setAttribute"]('font-size',((channels["get"]('fontSize')+'px')))):void 0), ((channels["has"]('text'))?(_z_.text(elm,(channels["get"]('text')))):void 0)):((type==='segment'))?(updateXY('x','y'), setFrom__tp__('x1','x'), setFrom__tp__('y1','y'), ((channels["has"]('xx'))?(elm["setAttribute"]('x2',((__tp__["xTransform"])(channels["get"]('xx'))))):void 0), ((channels["has"]('yy'))?(elm["setAttribute"]('y2',((__tp__["yTransform"])(channels["get"]('yy'))))):void 0)):(((type==='hLink')||((type==='vLink'))))?(((channelsHasAnyOf('x','xx','y','yy'))?(updateXY('x','y','xx','yy'), elm["setAttribute"]('d',(d3[(((type==='hLink')?'linkHorizontal':'linkVertical'))]()((({"source":([(__tp__["x"]),(__tp__["y"])]),"target":([(__tp__["xx"]),(__tp__["yy"])]),})))))):void 0)):((type==='edge'))?(((channelsHasAnyOf('x','xx','y','yy','size','clockwise'))?(updateXY('x','y','xx','yy'), ((channels["has"]('size'))?((__tp__["size"]) = channels["get"]('size')):void 0), ((channels["has"]('clockwise'))?((__tp__["clockwise"]) = _z_.number(_z_.boolean(channels["get"]('clockwise')))):void 0), elm["setAttribute"]('d',(dEdge(__tp__)))):void 0)):(((type==='hBar')||((type==='vBar'))))?(other = ((type==='hBar')?'xx':'yy'), ((channelsHasAnyOf('x','y',other,'size'))?(updateXY('x','y',other), ((channels["has"]('size'))?((__tp__["size"]) = channels["get"]('size')):void 0), ({x,xx,y,yy,} = __tp__), (((type==='hBar'))?(h = __tp__["heightFunc"](), bar = hBarValues((((o,v1,v2,v3,v4) => {o.x=v1;o.xx=v2;o.y=v3;o.h=v4;return o})(({}),x,xx,y,h)))):true?(w = __tp__["widthFunc"](), bar = vBarValues((((o,v1,v2,v3,v4) => {o.x=v1;o.y=v2;o.yy=v3;o.w=v4;return o})(({}),x,y,yy,w)))):void 0), elm["setAttribute"]('x',(bar["xCorner"])), elm["setAttribute"]('y',(bar["yCorner"])), elm["setAttribute"]('width',(bar["width"])), elm["setAttribute"]('height',(bar["height"]))):void 0), ((channels["has"]('cornerRadius'))?(elm["setAttribute"]('rx',(channels["get"]('cornerRadius')))):void 0)):((type==='rect'))?((() => {return ((channels["has"]('width'))?((__tp__["width"]) = (__tp__["widthFunc"])(channels["get"]('width')), setFrom__tp__('width','width')):void 0), ((channels["has"]('height'))?((__tp__["height"]) = (__tp__["heightFunc"])(channels["get"]('height')), setFrom__tp__('height','height')):void 0), (((channels["has"]('x')||(channels["has"]('width'))))?(updateXY('x'), ({x,} = __tp__), elm["setAttribute"]('x',(((__tp__["corner"])?(((__tp__["xReverse"])?((x-(__tp__["width"]))):x)):((x-(((__tp__["width"])/2)))))))):void 0), (((channels["has"]('y')||(channels["has"]('height'))))?(updateXY('y'), ({y,} = __tp__), elm["setAttribute"]('y',(((__tp__["corner"])?(((__tp__["yReverse"])?y:((y-(__tp__["height"]))))):((y-(((__tp__["height"])/2)))))))):void 0), ((channels["has"]('cornerRadius'))?(elm["setAttribute"]('rx',(channels["get"]('cornerRadius')))):void 0); var x,y})()):((type==='path'))?(((channels["has"]('path'))?(elm["setAttribute"]('d',(channels["get"]('path')))):void 0)):(singleMarkNames["has"](type))?((() => {return chUsed = false, (_z_x => {for (let ch of _z_x) {let f; ((channels["has"](ch))?(chUsed = true, f = channels["get"](ch), (__tp__[ch]) = (function(i) {return (__tp__[(((ch["0"])+'Transform'))])(f(i,state)); })):void 0)} return _z_x})(xyChannelNames), (chUsed?(elm["setAttribute"]('d',(dLineBand(__tp__)))):void 0); var chUsed})()):void 0), undefined; var __tp__,type,channels,channelsHasAnyOf,updateXY,setFrom__tp__,other,x,xx,y,yy,h,bar,w}), updatePlots = (function(isMerge,args) {return plotElmts = (new Set([])), (_z_x => {for (let pe of _z_x) {let oc; oc = pe?.['__tp__']?.['outerContainer'], (((oc===true))?(plotElmts["add"](pe)):((oc?.['__tp__']?.['outerContainer']===true))?(plotElmts["add"](oc)):void 0)} return _z_x})(iterableOfElelements((args["0"]))), newState = args[(((args["length"])-1))], (_z_x => {for (let pe of _z_x) {(isMerge?(merge((pe["__tp__"]["state"]),newState)):((pe["__tp__"]["state"]) = cloneDeep(newState)))} return _z_x})(plotElmts), ((((args["length"])===2))?((_z_x => {for (let pe of _z_x) {(_z_x => {for (let elm of _z_x) {updateElement(elm,(pe["__tp__"]["state"]))} return _z_x})((pe["__tp__"]["updatable"]))} return _z_x})(plotElmts)):true?(elmts = (new Set([])), (_z_x => {for (let elm of _z_x) {((elm?.['__tp__']?.['markUpdate']?.['size'])?(elmts["add"](elm)):void 0)} return _z_x})(iterableOfElelements((args["1"]))), (_z_x => {for (let elm of _z_x) {let oc; oc = elm?.['__tp__']?.['outerContainer'], ((plotElmts["has"](oc))?(updateElement(elm,(oc["__tp__"]["state"]))):void 0)} return _z_x})(elmts)):void 0), undefined; var plotElmts,newState,elmts}), (tp["update"]) = (function(...rest) {return (((((rest["length"])!==2)&&(((rest["length"])!==3))))?((e => {throw e})(Error('2 or 3 arguments expected'))):void 0), updatePlots(false,rest); }), (tp["mergeUpdate"]) = (function(...rest) {return (((((rest["length"])!==2)&&(((rest["length"])!==3))))?((e => {throw e})(Error('2 or 3 arguments expected'))):void 0), updatePlots(true,rest); }), (tp["cat"]) = (['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf']); var clipCount,gradientCount,markNames,singleMarkNames,transitionMarkNames,channelNames,nonUpdateChannelNames,handlerChannelNames,iterableOfElelements,getKind,xyChannelNames,nonPathChannelNames,legendFillStrokeChannels,angleChannels,curveTypes,markChannelError,isInfOrNaN,nonFiniteMsg,allMissingMsg,isArrayOfObjects,getDataset,capitalize,camelToKebab,cropTilde,minVal,maxVal,checkShapeScheme,checkData,getChannelDefault,fourOption,populateDataMap,updateDataMap,setUnlessNullish,useColorScheme,equalTo,magnitude,magnitude10,roundToMagnitude,enforceRound,accuracy,getTextWidth,shapeDetails,pointSymbol,hBarValues,vBarValues,dEdge,dLineBand,setTextTransform,setTransitionInitial,setTransition,polygonCentroid,colorRamp,addToTarget,updateElement,updatePlots,_z_;
-})();
-//# sourceMappingURL=index.js.map
+////////////////////////////////////////////////////////////////
+// Everything in one big file for now to keep the bundle size
+// down. Split up the code when Zap has better compiler options.
+////////////////////////////////////////////////////////////////
+
+////////// dev //////////
+// importAll 'https://cdn.skypack.dev/d3-shape' d3
+// importDefault 'https://cdn.skypack.dev/lodash@4.17' lodash
+// cloneDeep merge #= lodash
+/////////////////////////
+
+importAll 'd3-shape' d3
+importDefault 'lodash-es/merge.js' merge
+importDefault 'lodash-es/cloneDeep' cloneDeep
+
+import './defaults.js' defOptions defChannels defShapeScheme
+export tp
+
+
+// ========== helpers ==========
+
+// clip and gradient counts
+clipCount = 0
+gradientCount = 0
+
+// all mark names
+markNames = @@ 'hBar' 'vBar' 'point' 'circle' 'rect' 'segment' 'hLink' 'vLink'
+| 'arc' 'edge' 'text' 'path' 'line' 'hBand' 'vBand'
+
+// single marks
+singleMarkNames = @@ 'line' 'hBand' 'vBand'
+
+// marks that can use transition channels
+transitionMarkNames = @@ 'circle' 'hBar' 'vBar' 'rect' 'text'
+
+// channel names
+channelNames = new Set (defChannels ~keys)
+
+// channels that cannot be updated
+// (note that handlerChannelNames also cannot be updated)
+nonUpdateChannelNames = @@ 'xOffset' 'yOffset' 'class' 'name' 'note' 'noteColor'
+| 'noteOpacity' 'noteXOffset' 'noteYOffset' 'subplot'
+
+// handler channels
+handlerChannelNames = @@ 'mouseenter' 'mouseleave' 'click'
+
+// iterable of elements
+iterableOfElelements = fun elmts
+    if (elmts isString)
+        selectAll elmts
+    | (elmts ?: Symbol,iterator)
+        elmts
+    | else
+        @ elmts 
+
+// kind of channel
+getKind = fun ch
+    defChannels ~get ch : '_kind'
+
+// x and y channels
+xyChannelNames = @@ 'x' 'xx' 'y' 'yy'
+
+// common channels not used by path
+nonPathChannelNames = @@ 'x' 'y' 'xOffset' 'yOffset'
+
+// fill and stroke channels used in legend
+legendFillStrokeChannels = @@ 'fill' 'fillOpacity'
+| 'stroke' 'strokeOpacity' 'strokeWidth' 'strokeDash'
+
+// angle channels
+angleChannels = @@ 'startAngle' 'endAngle' 'padAngle'
+
+// curve types
+curveTypes = @@ 'basis' 'basisOpen' 'bundle' 'cardinal' 'cardinalOpen'
+| 'catmullRom' 'catmullRomOpen' 'linear' 'monotoneX' 'monotoneY' 'natural'
+| 'curveStep' 'curveStepAfter' 'curveStepBefore' 'basisClosed' 'cardinalClosed'
+| 'catmullRomClosed' 'linearClosed'
+
+// mark-channel error message
+markChannelError = [+ 'mark-'a', channel-'b', 'c \Error throw]
+
+// test if value is Infinity, -Infinity or NaN
+isInfOrNaN = fun val
+    val isNaN || (val == Infinity) || (val == (- Infinity))
+
+// error messages
+nonFiniteMsg = 'non-finite data value (NaN, Infinity or -Infinity)'
+allMissingMsg = 'every datum has a missing value'
+
+// is array of objects/arrays?
+isArrayOfObjects = fun d
+    d isArray && (d every [typeof a == 'object' && (a != null)])
+
+// get dataset
+getDataset = fun ds
+    if (ds isInteger && (ds > 0))
+        ds = empties ds each v i a
+            a;i = i
+    | (ds isArray !)
+        'dataset must be an array or a positive integer' \Error throw
+    | (ds,length == 0)
+        'dataset cannot be empty' \Error throw
+    ds
+
+// captitalize first character of string
+capitalize = fun s
+    s,0 toUpperCase + (s ~slice 1)
+
+// camel case to kebab case
+camelToKebab = fun s
+    s ~replace &/[A-Z]/g [+ '-'(a toLowerCase)]
+
+// crop tilde
+cropTilde = fun s
+    s isString && (s,0 == '~') ? (s ~slice 1) s
+
+// min/max of array where ignore undefined and null elements
+minVal = fun arr
+    mn = Infinity
+    arr each v
+        if ((v != null) && (v != undefined) && (v < mn))
+            mn \= v
+    mn
+maxVal = fun arr
+    mx = - Infinity
+    arr each v
+        if ((v != null) && (v != undefined) && (v > mx))
+            mx \= v
+    mx
+
+// check shape scheme, returns the scheme
+checkShapeScheme = fun scheme mk
+    if (scheme != defShapeScheme &&
+    | (scheme some [defShapeScheme ~includes a !]))
+        + 'mark-'mk,type', invalid shape name' \Error throw
+    scheme
+
+// check data array and get indices of missing values
+checkData = fun arr mk ch
+    if (arr,length == 0)
+        \markChannelError mk,type ch 'empty data array'
+    if (arr some isInfOrNaN)
+        \markChannelError mk,type ch nonFiniteMsg
+    if ((mk,missing == 'skip') || (mk,missing == 'gap'))
+        missingInds = @@
+        arr,length do i
+            if (arr;i isNullish)
+                missingInds ~add i
+        if (missingInds,size == arr,length)
+            \markChannelError mk,type ch allMissingMsg
+    | else
+        if (arr some [a isNullish])
+            \markChannelError mk,type ch 'missing data value'
+    # data arr attach missingInds 
+
+// get channel default
+getChannelDefault = fun mk ch
+    obj = defChannels ~get ch
+    obj ~hasOwnProperty mk,type ? (obj : mk,type) obj,def
+
+// get option that can be a 4-array or a number - assume default is a number
+fourOption = fun _options opName 
+    _options;opName as passed
+        def = defOptions;opName
+        if (passed isArray)
+            4 empties each e i arr
+                arr;i = passed;i ?? def
+        | else
+            4 empties ~fill (passed ?? def)
+
+// populate data map from order or seq option
+populateDataMap = fun dMap ch orderOp seqOp
+    if (orderOp isNullish !)
+        if (orderOp isArray !)
+            + ch'Order is not an array' \Error throw
+        if (orderOp some [typeof a == 'number'])
+            + ch'Order contains a number' \Error throw
+        if (orderOp some [a isNullish])
+            + ch'Order contains a null or undefined value' \Error throw
+        if (new Set orderOp : 'size' < orderOp,length)
+            + ch'Order contains a duplicate' \Error throw
+        orderOp each val
+            dMap ~set val dMap,size
+    | (seqOp isNullish !)
+        if (seqOp isInteger ! ||  (seqOp <= 0))
+            + ch'Seq must be a positive integer' \Error throw
+        j = 0
+        do
+            if (j < seqOp)
+                dMap ~set (j string) j
+                j += 1
+            | else
+                stop
+
+// update data map: adds key if unused (and not a number), returns value
+updateDataMap = fun dataMap key
+    if (typeof key == 'number')
+        key
+    | (dataMap ~has key)
+        dataMap ~get key
+    | else
+        sz = dataMap,size
+        dataMap ~set key sz
+        sz
+
+// set attribute unless value is nullish, returns the element
+setUnlessNullish = fun elm attrName val
+    if (val isNullish !)
+        elm attr attrName val
+    elm
+
+// use color scheme - mutates data if it is an array
+useColorScheme = fun data scheme mk ch
+    isConst = data isArray !
+    if (typeof scheme == 'function')  // continuous scheme
+        mn mx @= mk : (+ ch'Limits') ?? (@ null null)
+        mn = mn ?? (isConst ? data (\minVal data)) number
+        mx = mx ?? (isConst ? data (\maxVal data)) number
+        if (mn isFinite && (mx isFinite) !)
+            \markChannelError mk,type ch
+                + ch' limits are not finite'
+        if (mx - mn < 1e-14)
+            \markChannelError mk,type ch
+                + ch' limits are equal or the wrong way round'
+        if isConst
+            data \= data - mn / (mx - mn) \scheme
+        | else
+            rng = mx - mn
+            do data,length i
+                data;i = data;i - mn / rng \scheme
+        info = # 'min' mn 'max' mx attach scheme
+    | else  // discrete scheme
+        if isConst
+            data \= scheme;data
+        | else
+            do data,length i
+                data;i = scheme : data;i
+        info = # attach scheme
+    # attach data info
+
+// approx equal to    
+equalTo = fun u v
+    u - v abs < 1e-14
+
+// magnitude of a number: its index in standard form
+magnitude = fun v
+    sf = v ~toExponential
+    sf ~slice (sf ~indexOf 'e' + 1) number
+
+// as magnitude, but if v is a power of 10, use an index of 1 less
+magnitude10 = fun v
+    m = \magnitude v
+    10 ^ m \equalTo v ? (m - 1) m
+
+// round to given magnitude
+roundToMagnitude = fun v mag upDown
+    magVal = 10 ^ mag
+    v = v / magVal
+    r = v round
+    v = if (v \equalTo r)
+        r
+    | (upDown == 'up')
+        ceil v
+    | (upDown == 'down')
+        floor v
+    | else
+        r
+    v * magVal \enforceRound mag
+
+// assume v rounded to mag, but now enforce that rounded to mag exactly: for
+// decimals, removes tiny delta caused by floating point issues
+enforceRound = fun v mag
+    mag < 0 ? (v ~toFixed (mag abs) number) v
+
+// magnitude of highest precision digit
+// (should only use where expect t to have few significant figures)
+accuracy = fun t
+    m = \magnitude t
+    s = 1
+    do
+        if (t ~toPrecision s number \equalTo t)
+            stop
+        | (s == 14)
+            'failed to compute accuracy' \Error throw
+        | else
+            s += 1
+    m - s + 1
+
+// get text width
+getTextWidth = fun ctx txt
+    ctx ~measureText txt : 'width'
+
+// shape info
+// (xMult, yMult, xShift and yShift used in legend spacing hack)
+shapeDetails = #
+| 'circle'         (# name 'Circle'   xMult 1.138  yMult 1.138)
+| 'square'         (# name 'Square'   xMult 1      yMult 1)
+| 'diamond'        (# name 'Square'   xMult 1.414  yMult 1.414 rotate 45)
+| 'star'           (# name 'Star'     xMult 1.777  yMult 1.777)
+| 'wye'            (# name 'Wye'      xMult 1.469  yMult 1.469)
+| 'triangle-up'    (# name 'Triangle' xMult 1.477  yMult 1.3    yShift    0.2)
+| 'triangle-down'  (# name 'Triangle' xMult 1.477  yMult 1.3    yShift (- 0.2)  rotate 180)
+| 'triangle-right' (# name 'Triangle' xMult 1.3    yMult 1.477  xShift (- 0.15) rotate  90)
+| 'triangle-left'  (# name 'Triangle' xMult 1.3    yMult 1.477  xShift    0.15  rotate 270)
+| plus             (# name 'Cross'    xMult 1.331  yMult 1.331)
+| times            (# name 'Cross'    xMult 1.254  yMult 1.254 rotate 45)
+
+// point symbol: modifies ops,path or creates new path, returns the path
+pointSymbol = fun ops
+    path shape area x y #= ops
+    name rotate #= shapeDetails;shape
+    tform = + 'translate('x' 'y')'
+    if rotate
+        tform += + ' rotate('rotate')'
+    path ?? ($path)
+    | attr 'd'
+        d3 ~symbol (d3 : (+ 'symbol'name)) area call
+    | attr 'transform' tform
+
+// horizontal bar attribute values
+hBarValues = fun ops
+    x xx y h #= ops
+    xCorner = x <> xx
+    width = x - xx abs
+    height = h
+    yCorner = y - (h / 2)
+    # attach xCorner yCorner width height
+
+// vertical bar attribute values
+vBarValues = fun ops
+    x y yy w #= ops
+    width = w
+    xCorner = x - (w / 2)
+    yCorner = y <> yy
+    height = y - yy abs
+    # attach xCorner yCorner width height
+
+// d attribute for edge mark
+dEdge = fun values
+    x xx y yy size clockwise #= values
+    r = (x - xx ^ 2) + (y - yy ^ 2) sqrt / 2 / (size ^ (1 / 3))
+    + 'M 'x','y' A 'r' 'r' 0 0 'clockwise' 'xx','yy
+
+// d attribute for line or band
+dLineBand = fun ops
+    missing nObs type curveType presentInds x xx y yy #= ops
+    lineFunc = 
+        if (type == 'line')                
+            d3 ~line [\x a] [\y a]
+        | (type == 'hBand')
+            d3 ~area ~x [\x a] ~y0 [\y a] ~y1 [\yy a]
+        | (type == 'vBand')
+            d3 ~area ~x0 [\x a] ~x1 [\xx a] ~y [\y a]
+    | ~curve (d3 : (+ 'curve'(curveType \capitalize)))
+    if (missing == 'gap')
+        lineFunc ~defined [presentInds ~has a] call 
+            \[do nObs i (yield i)]
+    | else
+        \lineFunc presentInds
+
+// set text transform
+setTextTransform = fun elm x y rot
+    tform = + 'translate('x','y')'
+    if (rot isNullish !)
+        tform = + 'rotate('rot','x','y') 'tform
+    elm attr 'transform' tform
+
+// set initial transition
+setTransitionInitial = fun elm channels i
+    delay = channels ~delay i
+    duration = channels ~duration i
+    ease = channels ~ease i
+    \setTransition elm delay duration ease
+
+// set transition
+setTransition = fun elm delay duration ease
+    if (delay || duration)
+        elm style 'transition'
+            + 'all '(duration || 0)'ms 'ease' '(delay || 0)'ms'
+    | else
+        elm : 'style' ~removeProperty 'transition'
+    elm
+    
+// polygon centroid, from d3-polygon: https://github.com/d3/d3-polygon
+polygonCentroid = fun p
+    i = - 1
+    n = p,length
+    x = 0
+    y = 0
+    a = null
+    b = p : (n - 1)
+    c = null
+    k = 0
+    do
+        i += 1
+        if (i < n)
+            a \= b
+            b \= p;i
+            c \= a,0 * b,1 - (b,0 * a,1)
+            k += c
+            x += a,0 + b,0 * c
+            y += a,1 + b,1 * c
+        | else
+            stop
+    k *= 3
+    @ (x / k) (y / k)
+
+// color ramp
+colorRamp = fun schemeFun width height
+    f = fun v
+        1 - v \schemeFun
+    id = +'legend-gradient-'gradientCount
+    gradientCount += 1
+    g = $g
+    g insert ($defs)
+    | insert ($linearGradient)
+    | attr 'id' id
+    | attr 'gradientTransform' 'rotate(90)'
+    | insert (0 linSpace 1 16 encodeSVG 'stop')
+    | attr 'offset' [a * 100 + '%']
+    | attr 'stop-color' f
+    g insert ($rect)
+    | attr 'width'  width
+    | attr 'height' height
+    | attr 'fill'   (+ 'url(#'id')')
+    g
+
+// add to target
+addToTarget = fun content target
+    if target
+        target isString ? (select target) target ~append content
+    content
+
+    
+// ========== constructor ==========
+
+tp = class
+    this,_marks = @
+    this,_dataset = null
+    this,_options = #
+    this,_state = null
+
+
+// ========== plot method ==========
+
+tp :: 'plot' = fun target
+
+    _marks _dataset _options #= this
+    _state = _options,_outerContainer ?
+    | _options,_outerContainer,__tp__,state
+    | (\cloneDeep this,_state)
+
+    if (_marks,length == 0)
+        'plot has no marks' \Error throw
+
+    // local helpers
+    op = [_options;a ?? defOptions;a]
+    setAttr  = [a attr b (\op c)]
+    setDimAttr = fun elm dim attrName opName
+        elm attr attrName (dim + (\capitalize opName) \op ?? (opName \op))
+    setFont = fun elm prefix
+        elm
+        | attr 'font-family'  (+ prefix'FontFamily' \op ?? ('fontFamily' \op))
+        | attr 'font-size'    (+ prefix'FontSize'   \op ?? ('fontSize'   \op) + 'px')
+        | attr 'font-style'   (+ prefix'FontStyle'  \op ?? ('fontStyle'  \op)) 
+        | attr 'font-weight'  (+ prefix'FontWeight' \op ?? ('fontWeight' \op))
+        | attr 'fill'         (+ prefix'Color'      \op ?? ('color'      \op))
+        | attr 'fill-opacity' (+ prefix'Opacity'    \op ?? ('opacity'    \op))
+        | attr 'stroke-width' 0
+    getCanvasContext = fun prefix
+        canvas ctx @= sketch
+        ctx,font = + '' 
+        | (+ prefix'FontStyle'  \op ?? ('fontStyle'  \op))' '
+        | (+ prefix'FontWeight' \op ?? ('fontWeight' \op))' '
+        | (+ prefix'FontSize'   \op ?? ('fontSize'   \op) + 'px')' '
+        | (+ prefix'FontFamily' \op ?? ('fontFamily' \op))
+        ctx
+
+    // get mark-channel data
+    channelData = fun mk ch markUpdate
+        
+        data = mk;ch
+        isSubplot = ch == 'subplot'
+        isHandler = handlerChannelNames ~has ch
+        isSingleMarkNonXY =
+            singleMarkNames ~has mk,type && (xyChannelNames ~has ch !)
+
+        // nullish constant
+        if (data isNullish)
+            # isConst true data (\getChannelDefault mk ch)
+
+        // data array
+        | (data isArray)
+            if (isSubplot || isHandler || isSingleMarkNonXY)
+                \markChannelError mk,type ch 'unexpected array'
+            data array \checkData mk ch
+        
+        // ~string or accessor
+        | ((data isString && (data,0 == '~')) || (data isFunction))
+            
+            // get dataset
+            ds = mk,data ?? _dataset
+            if (ds !)
+                \markChannelError mk,type ch
+                    'no dataset attached to mark or plot'
+            
+            // ~string
+            if (data isString)
+                if (isSubplot || isHandler || isSingleMarkNonXY)
+                    \markChannelError mk,type ch 'unexpected ~string'
+                ds pick (data ~slice 1) \checkData mk ch
+                
+            // function
+            | else    
+
+                // check if function has state param - and if allowed to
+                hasStateParam = data,length > 2
+                if hasStateParam
+                    if (nonUpdateChannelNames ~has ch || isHandler)
+                        \markChannelError mk,type ch 'channel is not updatable'
+                    if (defChannels ~get ch : '_kind' == 'text' && (mk,type != 'text'))
+                        \markChannelError mk,type ch
+                            'channel is not updatable unless used with a text mark'
+                    if (mk,type == 'rect' && (mk,subplot isNullish !))
+                        \markChannelError mk,type ch
+                            'channel is not updatable since rect is a subplot'
+                    
+                // single-mark, non-xy channel - pass entire data set
+                if isSingleMarkNonXY
+                    if isHandler
+                        # isConst true data ds  // not used, handlers lookup dataset directly
+                    | else
+                        if hasStateParam
+                            markUpdate ~set ch
+                                fun s  // 1 parameter indicates constant when update
+                                    \data ds null s
+                        val = \data ds null _state
+                        if (\isInfOrNaN val)
+                            \markChannelError mk,type ch nonFiniteMsg
+                        # isConst true data (val ?? (\getChannelDefault mk ch))
+
+                // standard behavior - pass datum
+                | else
+                    if isHandler
+                        # isConst false data ds  // not used, handlers lookup dataset directly
+                                                 // (though is used in that length of data
+                                                 //  must be consistent with other channels)
+                    | else
+                        if hasStateParam
+                            markUpdate ~set ch
+                                fun i s  // 2 parameters indicates non-constant when update
+                                    \data ds;i i s
+                        if isSubplot
+                            # isConst false data ds
+                        | else
+                            ds map d i (\data d i _state) \checkData mk ch
+        
+        // constant
+        | else
+            if (isSubplot || isHandler)
+                \markChannelError mk,type ch 'unexpected constant value'
+            if (\isInfOrNaN data)
+                \markChannelError mk,type ch nonFiniteMsg
+            # isConst true attach data
+    
+    // data maps - fill, stroke and shape maps are mark-specific: each key is a
+    // a mark object, each value is a data map
+    dataMaps = # x (##) y (##) fill (##) stroke (##) shape (##)
+    'xy' each dim
+        dataMaps;dim \populateDataMap dim (+ dim'Order' \op) (+ dim'Seq' \op)
+    
+    // limits
+    limitsOp = \op 'limits'
+    if (limitsOp isArray)
+        if (limitsOp,length < 4)
+            limitsOp = limitsOp array
+            limitsOp,length = 4
+        xMinOp xMaxOp yMinOp yMaxOp @= limitsOp `?? defOptions,limits
+    | else
+        xMinOp = limitsOp
+        xMaxOp = limitsOp
+        yMinOp = limitsOp
+        yMaxOp = limitsOp
+    xMin = (xMinOp == '_nice' || (xMinOp == '_data')) ?    Infinity  xMinOp
+    xMax = (xMaxOp == '_nice' || (xMaxOp == '_data')) ? (- Infinity) xMaxOp
+    yMin = (yMinOp == '_nice' || (yMinOp == '_data')) ?    Infinity  yMinOp
+    yMax = (yMaxOp == '_nice' || (yMaxOp == '_data')) ? (- Infinity) yMaxOp
+    xMinReqd = xMin ==    Infinity
+    xMaxReqd = xMax == (- Infinity)
+    yMinReqd = yMin ==    Infinity
+    yMaxReqd = yMax == (- Infinity)
+     
+    
+    // ========== iterate over marks ==========
+    // process channels, get limits, build data maps
+    
+    markChannels = ##
+    markObs = ##
+    markSchemes = ##
+    markAreaInfo = ##
+    markPresentInds = ##
+    markUpdates = ##
+
+    _marks each mk
+
+        type #= mk
+        channels = #
+        nObs = null
+        schemeInfo = #
+        markUpdate = ##
+        missingAll = @@
+        channelsList = @@
+        noteUsed = mk,note isNullish !
+        pieUsed  = mk,pie  isNullish !
+
+
+        // ========== first iteration over channels  ==========
+        // basic checks and get indices of missing data
+
+        channelNames each ch
+
+            // mark has this channel?
+            kind = \getKind ch
+            if (
+            | (kind == 'common' && (type != 'path' || (nonPathChannelNames ~has ch !))) ||
+            | (type == 'text' && (kind == 'text')) ||
+            | (type != 'text' && (type != 'path') && noteUsed &&
+            |   (kind == 'text' || (kind == 'note'))) ||
+            | (kind == 'special' && (defChannels ~get ch ~hasOwnProperty type) && 
+            |   (pieUsed ! && (ch == 'pie') !))
+            | )
+
+                // push to channel list for this mark
+                channelsList ~add ch
+
+                // data and indices of missing values
+                data missingInds isConst #= \channelData mk ch markUpdate
+
+                // angle channels must be constant when pie channel is used
+                if (pieUsed && (angleChannels ~has ch) && (isConst !))
+                    \markChannelError type ch
+                        'data must be constant when used with pie channel'
+
+                // add indices of missing data for this channel to those of the mark
+                if missingInds
+                    missingInds each i
+                        missingAll ~add i
+
+                // data for each channel must have the same length
+                if (isConst !)
+                    if (nObs == null)
+                        nObs \= data,length
+                    | (data,length != nObs)
+                        \markChannelError type ch
+                            'length of data not consistent with other channels'
+
+                // store channel data
+                channels;ch = data
+        
+        // if all channels are constant, set nObs to 1
+        if (nObs == null)
+            nObs = 1
+
+        // indices of present (non-missing) observations
+        presentInds = @@
+        do nObs i
+            presentInds ~add i
+        missingAll each i
+            presentInds ~'delete' i
+        if (presentInds,size == 0)        
+            + 'mark-'type', 'allMissingMsg \Error throw
+
+        
+        // ========== second iteration over channels ==========
+        // construct data maps and map data, change from data to data getters
+        
+        channelsList each ch
+        
+            data = channels;ch
+            isConst = data isArray !
+            
+            // construct data maps and map the data
+            // x, xx, y, yy, fill, stroke, shape
+            if ((xyChannelNames ~has ch) ||
+            | (ch == 'fill') || (ch == 'stroke') || (ch == 'shape'))
+
+                scheme = mk : (+ ch'Scheme')
+
+                // data map
+                if (xyChannelNames ~has ch)
+                    dataMap = dataMaps : ch,0
+                | else  // fill, stroke, shape
+                    dataMap = null
+                    if (scheme isString)
+                        scheme = @ scheme
+                    scope
+                        if (ch == 'shape' ||
+                        | (scheme isNullish ! && (typeof scheme != 'function')))
+                            dataMap \= ##
+                            dataMap \populateDataMap
+                            | ch (mk : (+ ch'Order')) (mk : (+ ch'Seq'))
+                            dataMaps;ch ~set mk dataMap
+                
+                // if channel has data map, transform non-numeric data values to integers
+                if dataMap
+                    if isConst  // default never nullish for these channels
+                        data \= \updateDataMap dataMap data
+                    | else 
+                        data each v i
+                            // if datum has missing value (on any channel) should not contribute to data map
+                            if (presentInds ~has i)
+                                data;i = \updateDataMap dataMap v
+
+                // fill, stroke - if using scheme, replace data with colors
+                if (ch == 'fill' || (ch == 'stroke'))
+                    scope
+                        if (scheme isNullish !)
+                            actualColors = \useColorScheme data scheme mk ch
+                            data \= actualColors,data  // for constant data (array data is mutated by useColorScheme)
+                            schemeInfo;ch = actualColors,info
+
+                // shape: replace integers with shape name
+                | (ch == 'shape')
+                    scheme ?? defShapeScheme \checkShapeScheme mk as s
+                        if isConst
+                            data \= s;data
+                        | else
+                            do data,length i
+                                data;i = s : data;i
+                        schemeInfo,shape = # scheme s
+            
+            // data getter for channel (constant getter has length 0)
+            channels;ch = isConst ? (fun (data)) (fun i (data;i))
+
+
+        // ========== update x and y limits ========== 
+
+        scope
+            xMinNeed = xMinReqd
+            xMaxNeed = xMaxReqd
+            yMinNeed = yMinReqd
+            yMaxNeed = yMaxReqd
+            x y xx yy size #= channels
+            if dataMaps,x,size
+                if xMinNeed
+                    xMin \= xMin <> 0
+                if xMaxNeed
+                    xMax \= xMax >< (dataMaps,x,size - 1)
+            if dataMaps,y,size
+                if yMinNeed
+                    yMin \= yMin <> 0
+                if yMaxNeed
+                    yMax \= yMax >< (dataMaps,y,size - 1)
+            if (type == 'rect' && (mk,pixels !))
+                w = channels,width
+                h = channels,height
+                corner = mk,corner
+                if (xMinNeed)
+                    presentInds each i
+                        xMin \= xMin <> (corner ? (\x i) (\x i - (\w i / 2)))
+                    xMinNeed \= false
+                if (xMaxNeed)
+                    presentInds each i
+                        xMax \= xMax >< (\x i + (\w i / (corner ? 1 2)))
+                    xMaxNeed \= false
+                if (yMinNeed)
+                    presentInds each i
+                        yMin \= yMin <> (corner ? (\y i) (\y i - (\h i / 2)))
+                    yMinNeed \= false
+                if (yMaxNeed)
+                    presentInds each i
+                        yMax \= yMax >< (\y i + (\h i / (corner ? 1 2)))
+                    yMaxNeed \= false
+            | (type == 'vBar')
+                if (xMinNeed)
+                    presentInds each i
+                        xMin \= xMin <> (\x i - (\size i / 2))
+                    xMinNeed \= false
+                if (xMaxNeed)
+                    presentInds each i
+                        xMax \= xMax >< (\x i + (\size i / 2))
+                    xMaxNeed \= false
+            | (type == 'hBar')
+                if (yMinNeed)
+                    presentInds each i
+                        yMin \= yMin <> (\y i - (\size i / 2))
+                    yMinNeed \= false
+                if (yMaxNeed)
+                    presentInds each i
+                        yMax \= yMax >< (\y i + (\size i / 2)) 
+                    yMaxNeed \= false
+            if xMinNeed
+                if x
+                    presentInds each i
+                        xMin \= xMin <> (\x i)
+                if xx
+                    presentInds each i
+                        xMin \= xMin <> (\xx i)
+            if xMaxNeed
+                if x
+                    presentInds each i
+                        xMax \= xMax >< (\x i)
+                if xx
+                    presentInds each i
+                        xMax \= xMax >< (\xx i)
+            if yMinNeed
+                if y
+                    presentInds each i
+                        yMin \= yMin <> (\y i)
+                if yy
+                    presentInds each i
+                        yMin \= yMin <> (\yy i)
+            if yMaxNeed
+                if y
+                    presentInds each i
+                        yMax \= yMax >< (\y i)
+                if yy
+                    presentInds each i
+                        yMax \= yMax >< (\yy i)
+
+        
+        // ========== area scale ==========
+        
+        if (defChannels ~get 'area' ~hasOwnProperty type)
+            markAreaInfo ~set mk
+                scope
+                    mn = presentInds reduce [a <> (channels ~area b)] Infinity
+                    mx = presentInds reduce [a >< (channels ~area b)] (- Infinity)
+                    #
+                    | 'min' mn
+                    | 'max' mx
+                    | scale
+                        if (mk,areaScale isNullish)
+                            [a]
+                        | (mk,areaScale isFunction)
+                            fun val
+                                mk ~areaScale val mn mx
+                        | (mk,areaScale isArray)
+                            mnArea = mk,areaScale,0 ?? mn
+                            mxArea = mk,areaScale,1 ?? mx
+                            if (mnArea >= mxArea)
+                                + 'mark-'type', area min and max are equal or the wrong way round'
+                                | \Error throw
+                            rng = mx - mn
+                            rngArea = mxArea - mnArea
+                            [a - mn / rng * rngArea + mnArea]
+                        | else
+                            + 'mark-'type', areaScale must be an array or function'
+                            | \Error throw
+
+
+        // ========== store mark info ========== 
+
+        markChannels ~set mk channels
+        markObs ~set mk nObs
+        markSchemes ~set mk schemeInfo
+        markPresentInds ~set mk presentInds
+        markUpdates ~set mk markUpdate
+
+
+    // ========== legend ==========
+
+    gLegend = $g
+    legendWidth  = 0
+    legendHeight = 0
+    legendPosition = 'legendPosition' \op
+    legendOut = legendPosition ~slice 0 3 == 'out'
+    legendGap = 'legendGap' \op
+    if ('legend' \op)
+        scope
+
+            symbolSize = 10
+            rampHeight = 'legendRampHeight' \op
+            rampWidth  = 15
+            pointSize  = 64
+            legendPadding = \fourOption _options 'legendPadding'
+            hGap = 'legendLabelPadding' \op
+            vGap = 1.5 * hGap
+
+            // legend background <rect>
+            legendRect = gLegend insert ($rect)
+            | \setAttr 'fill'         'legendBackground'
+            | \setAttr 'fill-opacity' 'legendBackgroundOpacity'
+            | \setAttr 'stroke'       'legendBorderColor'
+            | \setAttr 'stroke-width' 'legendBorderWidth'
+            | \setUnlessNullish 'rx' ('legendCornerRadius' \op)
+            
+            // legend content <g>
+            gContent = gLegend insert ($g)
+            | attr 'text-anchor' 'start'
+            | attr 'dominant-baseline' 'middle'
+            | attr 'transform'
+                (+ 'translate('legendPadding,3' 'legendPadding,0')')
+            | \setFont 'legendLabel'
+            titleFontSize = 'legendTitleFontSize' \op ?? ('fontSize' \op)
+            labelFontSize = 'legendLabelFontSize' \op ?? ('fontSize' \op)
+            titleCtx = \getCanvasContext 'legendTitle'
+            labelCtx = \getCanvasContext 'legendLabel'
+            contentHeight = 0
+            contentWidth  = 0
+
+            // iterate over marks
+            _marks each mk
+
+                type #= mk
+                channels = markChannels ~get mk
+                
+                // constant values for legend channels
+                chConst = #
+                legendFillStrokeChannels each ch
+                    chConst;ch = channels;ch,length ?
+                    | (\getChannelDefault mk ch)
+                    | (channels ~(ch))
+                setConstant = fun elm chs
+                    chs ?? legendFillStrokeChannels each ch
+                        attrName = ch \camelToKebab
+                        if (ch == 'strokeDash')
+                            attrName += 'array'
+                        elm attr attrName chConst;ch
+                    elm
+                
+                // channels (that may be) shown in legend
+                if (type == 'point')
+                    @ 'fill' 'stroke' 'shape' 'area'
+                | (type == 'circle')
+                    @ 'fill' 'stroke' 'area'
+                | else
+                    @ 'fill' 'stroke'
+                | each ch
+                    
+                    opValue      = mk : (+ ch'Legend')
+                    chFormat     = mk : (+ ch'Format') ?? [a]
+                    chSchemeInfo = markSchemes ~get mk ?: ch
+                    chScheme     = chSchemeInfo ?: 'scheme'
+                    
+                    // if showing channel in legend
+                    if (opValue == true ||
+                    | (opValue != false && channels;ch,length) &&
+                    | (ch == 'shape' || (ch == 'area') || chScheme))
+                    
+                        // title
+                        titleValue = mk : (+ ch'Title')
+                        if (titleValue isNullish !)
+                            contentHeight +=
+                                contentHeight ? (1.5 * vGap) 0 + (titleFontSize / 2)
+                            contentWidth \= contentWidth ><
+                                titleCtx \getTextWidth titleValue
+                            gContent insert ($text)
+                            | attr 'y' contentHeight
+                            | text titleValue
+                            | \setFont 'legendTitle'
+                            contentHeight += titleFontSize / 2
+
+                        // add label function
+                        addLabel = fun nameInt symbolWidth central
+                            symbolWidth ?= symbolSize
+                            lbl = chFormat apply nameInt 
+                            elm = $text
+                            | text lbl
+                            | attr 'x' (symbolWidth + hGap)
+                            | attr 'y' contentHeight
+                            if central
+                                elm attr 'dominant-baseline' 'central'
+                            elm into gContent
+                            contentWidth \= contentWidth ><
+                                symbolWidth + hGap + (labelCtx \getTextWidth lbl)
+
+                        // fill and stroke
+                        if (ch == 'fill' || (ch == 'stroke'))
+                            scope
+ 
+                                // discrete scheme
+                                if (chScheme isArray)
+                                    dataMaps;ch ~get mk each nameInt
+                                        contentHeight += contentHeight ? vGap 0 + (labelFontSize / 2)
+                                        pointElm = null
+                                        if (type == 'point' || (type == 'circle'))
+                                            pointElm = \pointSymbol
+                                                # shape
+                                                    if (type == 'circle' || channels,shape,length)
+                                                        'circle'
+                                                    | else
+                                                        channels ~shape
+                                                | area pointSize
+                                                | x (pointSize sqrt / 2)
+                                                | y contentHeight
+
+                                        // stroke
+                                        if (ch == 'stroke')
+                                            pointElm ||
+                                                $line
+                                                | attr 'x2' symbolSize
+                                                | attr 'y1' contentHeight
+                                                | attr 'y2' contentHeight
+                                            | attr 'stroke' (chScheme : nameInt,1)
+                                            | \setConstant (@ 'strokeOpacity' 'strokeWidth' 'strokeDash')
+                                            | attr 'fill' 'none'
+
+                                        // fill
+                                        | else
+                                            pointElm || 
+                                                $rect
+                                                | attr 'y' (contentHeight - (symbolSize / 2))
+                                                | attr 'width' symbolSize
+                                                | attr 'height' symbolSize
+                                            | attr 'fill' (chScheme : nameInt,1)
+                                            | \setConstant (@ 'fillOpacity')
+                                            | attr 'stroke' 'none'
+                                        
+                                        // insert symbol and add label
+                                        | into gContent 
+                                        \addLabel nameInt
+                                        contentHeight += labelFontSize / 2
+
+                                // continuous scheme
+                                | (chScheme isFunction)
+                                    contentHeight += contentHeight ? vGap 0
+                                    gContent insert
+                                        \colorRamp chScheme rampWidth rampHeight
+                                        | attr 'transform' (+ 'translate(0 'contentHeight')')
+                                        | attr 'fill-opacity' chConst,fillOpacity
+                                    mn = chSchemeInfo : 'min' \chFormat
+                                    mx = chSchemeInfo : 'max' \chFormat
+                                    contentWidth \= contentWidth ><
+                                        rampWidth + hGap + 
+                                            labelCtx \getTextWidth mn ><
+                                                labelCtx \getTextWidth mx
+                                    gContent insert ($text)
+                                    | attr 'dominant-baseline' 'hanging'
+                                    | attr 'x' (rampWidth + hGap)
+                                    | attr 'y' contentHeight
+                                    | text mx
+                                    contentHeight += rampHeight
+                                    gContent insert ($text)
+                                    | attr 'dominant-baseline' 'auto'
+                                    | attr 'x' (rampWidth + hGap)
+                                    | attr 'y' contentHeight
+                                    | text mn
+
+                        // shape
+                        | (ch == 'shape')
+                            dataMaps,shape ~get mk each nameInt
+                                contentHeight += contentHeight ? vGap 0 + (labelFontSize / 2)
+                                \pointSymbol
+                                    # shape (chScheme : nameInt,1)
+                                    | area pointSize
+                                    | x (pointSize sqrt / 2)
+                                    | y contentHeight
+                                | \setConstant
+                                | into gContent
+                                \addLabel nameInt
+                                contentHeight += labelFontSize / 2
+
+                        // area
+                        | (ch == 'area')
+                            scope
+                                areaInfo = markAreaInfo ~get mk
+                                mn = areaInfo : 'min'
+                                mx = areaInfo : 'max'
+                                scale #= areaInfo
+                                ticks = mk,areaTickValues ?? (@ mn (mn + mx / 2) mx)
+                                if ticks,length
+                                    shp = (type == 'circle' || channels,shape,length) ?
+                                    | 'circle' (channels ~shape)
+                                    xMult yMult xShift yShift #= shapeDetails;shp
+                                    areas = ticks ~'map' scale
+                                    hLengths = areas sqrt `* xMult
+                                    vLengths = areas sqrt `* yMult
+                                    hMax = hLengths max
+                                    jumps = vLengths `>< labelFontSize `/ 2
+                                    x = 0.5 + (xShift ?? 0) * hMax
+                                    ticks each tick i
+                                        if contentHeight
+                                            contentHeight += vGap
+                                        contentHeight += (jumps : (i - 1) ?? 0) + jumps;i
+                                        \pointSymbol
+                                            # shape shp
+                                            | area areas;i
+                                            | x x 
+                                            | y (contentHeight + (jumps;i * (yShift ?? 0))) 
+                                        | \setConstant
+                                        | into gContent
+                                        \addLabel (@ tick i) hMax 'central'
+                                    contentHeight += jumps : (ticks,length - 1)
+
+            // set width and height of legend and background rectangle
+            if contentWidth                                                
+                legendWidth  \= contentWidth + legendPadding,3 + legendPadding,1
+                legendHeight \= contentHeight + legendPadding,0 + legendPadding,2
+                legendRect
+                | attr 'width'  legendWidth
+                | attr 'height' legendHeight
+
+
+    // ========== if plot option false, return legend ==========
+    
+    if ('plot' \op == false)
+        gLegend
+    | else
+
+
+        // ========== finalize limits, get magnitudes and ranges ========== 
+
+        if (xMin isFinite && (xMax isFinite) !)
+            'x limits are not finite numbers' \Error throw
+        if (yMin isFinite && (yMax isFinite) !)
+            'y limits are not finite numbers' \Error throw
+        if (xMax - xMin < 1e-14)
+            if ((xMin == 0) && (xMax == 0) && (xMinOp == '_nice') && (xMaxOp == '_nice'))
+                xMin = - 1
+                xMax = 1
+            | else
+                'x limits are equal or the wrong way round' \Error throw
+        if (yMax - yMin < 1e-14)
+            if ((yMin == 0) && (yMax == 0) && (yMinOp == '_nice') && (yMaxOp == '_nice'))
+                yMin = - 1
+                yMax = 1
+            | else
+                'y limits are equal or the wrong way round' \Error throw
+        xMag = xMax - xMin \magnitude10
+        yMag = yMax - yMin \magnitude10
+        if (xMinOp == '_nice')
+            xMin = dataMaps,x,size ?
+            | (xMin - 0.1)
+            | (xMin \roundToMagnitude xMag 'down')
+        if (xMaxOp == '_nice')
+            xMax = dataMaps,x,size ?
+            | (xMax + 0.1)
+            | (xMax \roundToMagnitude xMag 'up')
+        if (yMinOp == '_nice')
+            yMin = dataMaps,y,size ?
+            | (yMin - 0.1)
+            | (yMin \roundToMagnitude yMag 'down')
+        if (yMaxOp == '_nice')
+            yMax = dataMaps,y,size ?
+            | (yMax + 0.1)
+            | (yMax \roundToMagnitude yMag 'up')
+        xRange = xMax - xMin
+        yRange = yMax - yMin
+
+
+        // ========== compute ticks and labels ==========
+        // (but do not create the elements yet)
+
+        xClean = 'xClean' \op ?? ('clean' \op)
+        yClean = 'yClean' \op ?? ('clean' \op)
+        usedDims = + ''(xClean ? '' 'x')(yClean ? '' 'y')
+        ticks  = # x (@) y (@)
+        labels = # x (@) y (@)
+        usedDims each dim
+            dimTicks = + dim'Ticks' \op
+            if (dimTicks || ('ticks' \op && (dimTicks isNullish)))
+                dimMin dimMax @= (dim == 'x') ? (@ xMin xMax) (@ yMin yMax)
+                dimIsCat = dataMaps;dim,size
+                dimLabels = + dim'Labels' \op 
+                if (dimLabels || ('labels' \op && (dimLabels isNullish)))
+                    useLabels = true
+                    fmt = + dim'Format' \op ?? [a]
+
+                // function to add tick and label
+                addTick =
+                    if dimIsCat
+                        nonNumericLookup = dataMaps;dim ~keys array
+                        numericSet = new Set (dataMaps;dim ~values)
+                        fun val
+                            if (typeof val == 'number')
+                                if (numericSet ~has val !)
+                                    + dim'-ticks, numeric tick value has no corresponding categorical value'
+                                    | \Error throw
+                                ticks;dim ~push val
+                                if useLabels
+                                    labels;dim ~push (nonNumericLookup;val val \fmt)
+                            | else
+                                if (dataMaps;dim ~has val !)
+                                    + dim'-ticks, categorical tick value does not appear in the data'
+                                    | \Error throw
+                                numVal = dataMaps;dim ~get val
+                                ticks;dim ~push numVal
+                                if useLabels
+                                    labels;dim ~push (val numVal \fmt)
+                    | else
+                        fun val
+                            if (typeof val != 'number')
+                                + dim'-ticks, unexpected categorical (non-numeric) tick value'
+                                | \Error throw
+                            ticks;dim ~push val
+                            if useLabels
+                                labels;dim ~push (val \fmt)
+
+                // add ticks and labels
+                if (dimIsCat ! && (+ dim'TickMin' \op))
+                    \addTick dimMin
+                tickValues = + dim'TickValues' \op
+                if (tickValues isNullish !)
+                    tickValues each v
+                        \addTick v
+                | else  // generate tick values
+                    tickStep = + dim'TickStep' \op
+                    if dimIsCat
+                        if (tickStep isNullish)
+                            tickStep = 1
+                        | else
+                            tickStep = tickStep number abs
+                            if (tickStep isInteger ! || (tickStep == 0))
+                                + 'invalid 'dim'TickStep for categorical axis'
+                                | \Error throw
+                        dataMaps;dim ~values each v
+                            if (v % tickStep == 0)    
+                                \addTick v
+                    | else
+                        if (tickStep isNullish)
+                            tickStepMag = (dim == 'x') ? xMag yMag
+                            tickStep = 10 ^ tickStepMag
+                        | else
+                            tickStep = tickStep number abs
+                            if (tickStep isFinite ! || (tickStep == 0) ||
+                            | (dimMax - dimMin / tickStep > 1000))
+                                + dim'TickStep is invalid or too small' 
+                                | \Error throw
+                            tickStepMag = tickStep \accuracy
+                        t = dimMin \roundToMagnitude tickStepMag 'up'
+                        do
+                            if (t <= (dimMax + 1e-14))
+                                \addTick t
+                                t \= t + tickStep \enforceRound tickStepMag
+                            | else
+                                stop
+                if (dimIsCat ! && (+ dim'TickMax' \op))
+                    \addTick dimMax
+
+    
+        // ========== left, right, top, bottom space ========== 
+
+        getXAxisSpace = fun
+            space = 'xAxisPadding' \op  // used even if axis hidden
+            xAxis = 'xAxis' \op
+            if (xAxis || ('axis' \op && (xAxis isNullish)))
+                space += 'xAxisWidth' \op ?? ('axisWidth' \op) / 2
+            if ticks,x,length
+                space += 'xTickLength' \op ?? ('tickLength' \op)
+                if labels,x,length
+                    space += 'xLabelPadding' \op +
+                        'xLabelFontSize' \op ?? ('fontSize' \op) 
+            space
+        yAxisSpace = null
+        getYAxisSpace = fun
+            space = 'yAxisPadding' \op  // used even if axis hidden
+            yAxis = 'yAxis' \op
+            if (yAxis || ('axis' \op && (yAxis isNullish)))
+                space += 'yAxisWidth' \op ?? ('axisWidth' \op) / 2
+            if ticks,y,length
+                space += 'yTickLength' \op ?? ('tickLength' \op)
+                if labels,y,length
+                    ctx = \getCanvasContext 'yLabel'
+                    space += 'yLabelPadding' \op + 
+                        labels,y reduce [a >< (ctx \getTextWidth b)] 0
+            yAxisSpace \= space
+        getTitle = fun dim  // dim can be x, y or plot
+            title = + dim'Title' \op
+            if (dim == 'x' || (dim == 'y') && (title isNullish))
+                vbleName = _marks,0 ?: dim
+                if (vbleName isString && (vbleName,0 == '~'))
+                    title = vbleName ~slice 1                    
+            | (title == false)  // do not use auto title
+                title = null
+            title
+        getTitleSpace = fun dim  // dim can be x, y or plot
+            \getTitle dim isNullish ? 0
+                (+ dim'TitleFontSize' \op) ?? ('fontSize' \op) +
+                | (+ dim'TitlePadding' \op)
+        getSideSpace = fun side
+            yClean ! && ('yAxisPosition' \op == side) ?
+            | (yAxisSpace ?? (\getYAxisSpace) + (\getTitleSpace 'y'))
+            | 0
+        getTopSpace = fun
+            'xAxisPosition' \op == 'bottom' || xClean ?
+            | (\getTitleSpace 'plot')
+            | (\getXAxisSpace + (\getTitleSpace 'x'))
+        getBottomSpace = fun
+            if xClean
+                0
+            | ('xAxisPosition' \op == 'bottom')
+                \getXAxisSpace + (\getTitleSpace 'x')
+            | else
+                \getTitleSpace 'plot'
+        paneSpaceOp = 'paneSpace' \op
+        topSpace rightSpace bottomSpace leftSpace @=
+            paneSpaceOp isArray ? paneSpaceOp (4 empties ~fill paneSpaceOp)
+        topSpace    ?= \getTopSpace
+        rightSpace  ?= \getSideSpace 'right'
+        bottomSpace ?= \getBottomSpace
+        leftSpace   ?= \getSideSpace 'left'
+
+
+        // ========== width, height, paneWidth, paneHeight ==========
+
+        plotSpace = \fourOption _options 'plotSpace'
+        width = null
+        height = null
+        paneWidth = null
+        paneHeight = null
+        setWidthFromPaneWidth = fun
+            width \=
+                plotSpace,3 + leftSpace + paneWidth + rightSpace + plotSpace,1
+            if (legendOut && legendWidth)
+                width += legendWidth + legendGap
+        setHeightFromPaneHeight = fun
+            height \= plotSpace,0 + topSpace + plotSpace,2 +
+                paneHeight + bottomSpace ><
+                    legendOut ? legendHeight 0
+        setPaneHeightFromHeight = fun
+            paneHeight \=
+                height - plotSpace,0 - topSpace - bottomSpace - plotSpace,2
+        if ('width' \op == 'preserve' && ('height' \op == 'preserve'))
+            'width and height are both "preserve"' \Error throw
+        if ('setPaneSize' \op)
+            paneWidth = 'width' \op
+            paneHeight = 'height' \op 
+            if (paneHeight == 'preserve')
+                paneHeight = paneWidth / xRange * yRange
+            | (paneWidth == 'preserve')
+                paneWidth = paneHeight / yRange * xRange
+            \setWidthFromPaneWidth
+            \setHeightFromPaneHeight
+        | else
+            width = 'width' \op
+            height = 'height' \op
+            if (width != 'preserve')
+                paneWidth =
+                    width - plotSpace,3 - leftSpace - rightSpace - plotSpace,1
+                if (legendOut && legendWidth)
+                    paneWidth -= legendWidth + legendGap
+                if (height == 'preserve')
+                    paneHeight = paneWidth / xRange * yRange
+                    \setHeightFromPaneHeight
+                | else
+                    \setPaneHeightFromHeight
+            | else
+                \setPaneHeightFromHeight                    
+                paneWidth = paneHeight / yRange * xRange
+                \setWidthFromPaneWidth
+        if (paneWidth <= 0)
+            'pane width is less than or equal to 0' \Error throw
+        if (paneHeight <= 0)
+            'pane height is less than or equal to 0' \Error throw
+
+
+        // ========== reverse, scale, transform ==========
+
+        xReverse = \op 'xReverse'
+        yReverse = \op 'yReverse'
+        xScale = xReverse ?
+        | [xMax - a / xRange * paneWidth]
+        | [a - xMin / xRange * paneWidth]
+        yScale = yReverse ?
+        | [yMax - a / yRange * paneHeight -]
+        | [a - yMin / yRange * paneHeight -]
+        xTransform = fun val
+            if (val isNumber ! && dataMaps,x,size) 
+                val = dataMaps,x ~get val
+            val \xScale + leftSpace + this,xOffset
+        yTransform = fun val
+            if (val isNumber ! && dataMaps,y,size) 
+                val = dataMaps,y ~get val
+            val \yScale + topSpace + paneHeight - this,yOffset
+
+
+        // ========== container svg/g, pane and grid ==========
+        
+        // container
+        if _options,_outerContainer
+            container = $g
+            outerContainer = _options,_outerContainer
+        | else
+            container = $svg
+            | attr 'viewBox' (+ '0 0 'width' 'height)
+            | style 'cursor' 'default'
+            | style '-moz-user-select' 'none'
+            | style '-webkit-user-select' 'none'
+            | style '-ms-user-select' 'none'
+            | style 'user-select' 'none'
+            | prop '__tp__' (# outerContainer true updatable (@) state _state)
+            if (\op 'fit' != 'preserve')
+                container
+                | attr 'width'  width
+                | attr 'height' height
+            outerContainer = container
+        \op 'class' as opClass
+            if (opClass isNullish !)
+                container addClass opClass
+
+        // background <rect>
+        container insert ($rect)
+        | attr 'width'  width
+        | attr 'height' height
+        | \setAttr 'fill' 'background'
+        | as bgrd
+            cornerRadius = \op 'cornerRadius'
+            if (cornerRadius isNullish !)
+                bgrd attr 'rx' cornerRadius
+        
+        // plot <g>
+        gPlot = container insert ($g)
+        scope
+            shift = legendPosition == 'out-left' && legendWidth ?
+            | (legendWidth + legendGap)
+            | 0
+            gPlot attr 'transform'
+                + 'translate('(plotSpace,3 + shift)' 'plotSpace,0')'
+
+        // pane
+        gPlot insert ($rect)
+        | attr 'width'  paneWidth
+        | attr 'height' paneHeight
+        | attr 'x' leftSpace            
+        | attr 'y' topSpace
+        | \setAttr 'fill'         'paneBackground'
+        | \setAttr 'stroke-width' 'paneBorderWidth'  
+        | \setAttr 'stroke'       'paneBorderColor'
+
+        // clip path
+        paneClipId = null
+        if ('clip' \op)
+            paneClipId = + 'pane-clip-'clipCount
+            clipCount += 1
+            gPlot insert ($defs)
+            | insert ($clipPath)
+            | attr 'id' paneClipId
+            | insert ($rect)
+            | attr 'width'  paneWidth
+            | attr 'height' paneHeight
+            | attr 'x' leftSpace            
+            | attr 'y' topSpace
+
+        // grid
+        usedDims each dim
+            if ticks;dim,length
+                dimGrid = + dim'Grid' \op
+                if (dimGrid || ('grid' \op && (dimGrid isNullish)))
+                    gGrid = gPlot insert ($g)
+                    | \setDimAttr dim 'stroke-width'   'gridWidth'
+                    | \setDimAttr dim 'stroke'         'gridColor'
+                    | \setDimAttr dim 'stroke-opacity' 'gridOpacity'
+                    | attr 'transform'
+                        + 'translate('(leftSpace)' '(topSpace + paneHeight)')'
+                    ticks;dim each val
+                        if (dim == 'x')
+                            x1 = val \xScale
+                            x2 = x1
+                            y1 = 0
+                            y2 = - paneHeight
+                        | else
+                            x1 = 0
+                            x2 = paneWidth
+                            y1 = val \yScale
+                            y2 = y1 
+                        $line
+                        | attr 'x1' x1
+                        | attr 'x2' x2 
+                        | attr 'y1' y1 
+                        | attr 'y2' y2 
+                        | into gGrid
+
+
+        // ========== axes, ticks, labels and titles ==========
+
+        usedDims each dim
+
+            xDim = dim == 'x'
+            top = xDim && ('xAxisPosition' \op == 'top')
+            bottom = xDim && (top !)
+            right = xDim ! && ('yAxisPosition' \op == 'right')
+            left = xDim || right !
+            xAxisPadding = 'xAxisPadding' \op 
+            yAxisPadding = 'yAxisPadding' \op 
+            
+            // wrapper <g> for axis, ticks, labels and title
+            xShiftWrap = leftSpace + 
+            | (right ? (paneWidth + yAxisPadding) (left ? (- yAxisPadding) 0))
+            yShiftWrap = topSpace +
+            | (top ? (- xAxisPadding) (bottom ? (paneHeight + xAxisPadding) paneHeight))
+            gWrap = gPlot insert ($g)  
+            | attr 'text-anchor'
+                xDim ? ('xLabelAlign' \op) (left ? 'end' 'start')
+            | attr 'dominant-baseline'
+                xDim ? (bottom ? 'hanging' 'auto') ('yLabelAlign' \op)
+            | \setFont (+ dim'Label')
+            | attr 'transform' (+ 'translate('xShiftWrap' 'yShiftWrap')')
+
+            // axis
+            axisUsed = false
+            halfAxisWidth = 0
+            dimAxis = + dim'Axis' \op
+            if (dimAxis || ('axis' \op && (dimAxis isNullish)))
+                axisUsed = true
+                $line as line
+                    line  
+                    | \setDimAttr dim 'stroke-width'   'axisWidth'
+                    | \setDimAttr dim 'stroke'         'axisColor'
+                    | \setDimAttr dim 'stroke-opacity' 'axisOpacity'
+                    | attr (+ dim'2') (xDim ? paneWidth (- paneHeight))
+                    | into gWrap
+                    halfAxisWidth \= line attr 'stroke-width' / 2
+
+            // ticks and labels - loop over ticks
+            tickLength = + dim'TickLength' \op ?? ('tickLength' \op)
+            labelPadding = + dim'LabelPadding' \op
+            labelRotate = + dim'LabelRotate' \op
+            ticks;dim each val i
+                gTick = gWrap insert ($g)
+                | attr 'transform'
+                    dim == 'x' ?
+                    | (+ 'translate('(val \xScale)' '(top ? (- halfAxisWidth) halfAxisWidth)')')
+                    | (+ 'translate('(left ? (- halfAxisWidth) halfAxisWidth)' '(val \yScale)')')
+                
+                // tick
+                $line
+                | \setDimAttr dim 'stroke-width'   'tickWidth'
+                | \setDimAttr dim 'stroke'         'tickColor'
+                | \setDimAttr dim 'stroke-opacity' 'tickOpacity'
+                | attr (xDim ? 'y2' 'x2') (bottom || right ? tickLength (- tickLength))
+                | into gTick
+                
+                // label
+                if labels;dim,length
+                    scope
+                        labelShift = tickLength + labelPadding
+                        labelOffset = + dim'LabelOffset' \op
+                        lbl = $text
+                        | text labels;dim;i
+                        | attr (xDim ? 'y' 'x') (bottom || right ? labelShift (- labelShift))
+                        | attr (xDim ? 'x' 'y') (xDim ? labelOffset (- labelOffset))
+                        if (labelRotate isNullish !)
+                            center = labelShift
+                            if xDim
+                                center += + dim'LabelFontSize' \op ?? ('fontSize' \op) / 2
+                            lbl attr 'transform'
+                                xDim ?
+                                | (+ 'rotate('labelRotate',0,'(top ? (- center) center)')')
+                                | (+ 'rotate('labelRotate','(left ? (- center) center)',0)')
+                        lbl into gTick
+
+            // titles
+            scope
+                dimTitle = \getTitle dim                   
+                if (dimTitle isNullish !)
+                    if xDim
+                        x = 'xTitleOffset' \op
+                        textAnchor = 'xTitleAlign' \op
+                        if (textAnchor == 'end')
+                            x += paneWidth
+                        | (textAnchor != 'start')
+                            x += paneWidth / 2
+                            textAnchor = 'middle'
+                        dominantBaseline = bottom ? 'hanging' 'auto'
+                        y = 'xTitlePadding' \op + halfAxisWidth
+                        if (ticks;dim,length)
+                            y += tickLength
+                        if (labels;dim,length)
+                            y += labelPadding +
+                                'xLabelFontSize' \op ?? ('fontSize' \op)
+                        if top
+                            y *= - 1
+                        rotate = null
+                    | else  // y title
+                        x = 'yTitlePadding' \op + (yAxisSpace ?? (\getYAxisSpace)) -
+                            yAxisPadding  // y axis padding is in gWrap transfn and yAxisSpace
+                        if left
+                            x *= - 1
+                        textAnchor = 'yTitleAlign' \op
+                        y = if (textAnchor == 'start')
+                            0
+                        | (textAnchor == 'end')
+                            paneHeight -
+                        | else
+                            paneHeight / 2 -
+                        dominantBaseline = left ? 'auto' 'hanging'
+                        rotate = + 'rotate('(-90)' 'x' 'y')'
+                    $text
+                    | text dimTitle
+                    | attr 'x' x                            
+                    | attr 'y' y                            
+                    | attr 'text-anchor' textAnchor   
+                    | attr 'dominant-baseline' dominantBaseline
+                    | \setUnlessNullish 'transform' rotate                   
+                    | \setFont (+ dim'Title')
+                    | into gWrap
+
+        // plot title
+        \getTitle 'plot' as plotTitle
+            if (plotTitle isNullish !)
+                top = 'xAxisPosition' \op == 'bottom' || xClean
+                padding = 'plotTitlePadding' \op
+                align = 'plotTitleAlign' \op
+                $text
+                | text plotTitle
+                | attr 'x'
+                    if (align == 'start')
+                        leftSpace - 
+                            'yAxisPosition' \op == 'left' && (yClean !) ?
+                            | (yAxisSpace ?? (\getYAxisSpace))
+                            | 0
+                    | (align == 'end')
+                        leftSpace + paneWidth + 
+                            'yAxisPosition' \op == 'right' && (yClean !) ?
+                            | (yAxisSpace ?? (\getYAxisSpace))
+                            | 0
+                    | else
+                        leftSpace + paneWidth + rightSpace / 2
+                    | + ('plotTitleOffset' \op)
+                | attr 'y'
+                    top ? (topSpace - padding) (topSpace + paneHeight + padding)
+                | attr 'text-anchor' align
+                | attr 'dominant-baseline' (top ? 'auto' 'hanging')                   
+                | \setFont 'plotTitle'
+                | into gPlot
+
+
+        // ========== draw marks ==========
+
+        updatable #= outerContainer,__tp__
+
+        // finish mark: set attributes/properties
+        finishMark = fun elm mk channels i isSubplot
+            if (isSubplot !)
+                elm
+                | attr 'fill'           (channels ~fill i)
+                | attr 'fill-opacity'   (channels ~fillOpacity i)
+                | attr 'stroke'         (channels ~stroke i)
+                | attr 'stroke-opacity' (channels ~strokeOpacity i)
+                | attr 'stroke-width'   (channels ~strokeWidth i)
+                | \setUnlessNullish 'stroke-linecap'   (channels ~strokeCap  i) 
+                | \setUnlessNullish 'stroke-dasharray' (channels ~strokeDash i)
+            c = channels ~'class' i
+            if (c isNullish !)
+                elm addClass c
+            nm = channels ~name i
+            if (nm isNullish !)
+                elm attr 'data-tp-name' nm
+            ds = mk,data ?? _dataset
+            handlerChannelNames each eventType
+                if (mk;eventType isNullish !)
+                    elm ~addEventListener eventType
+                        i == null ?
+                        | (mk;eventType ~bind elm ds null)
+                        | (mk;eventType ~bind elm ds;i i)
+
+        // <g> containing all mark elements
+        gMarks = gPlot insert ($g)
+        | attr     'font-size'   ('fontSize' \op + 'px')
+        | \setAttr 'font-family' 'fontFamily'
+        | \setAttr 'font-style'  'fontStyle'
+        | \setAttr 'font-weight' 'fontWeight'
+        if paneClipId
+            gMarks attr 'clip-path' (+ 'url(#'paneClipId')')
+
+        // iterate over marks
+        _marks each mk
+
+            type #= mk
+            channels = markChannels ~get mk
+            xOffset yOffset size #= channels
+            nObs = markObs ~get mk
+            presentInds = markPresentInds ~get mk
+            schemes = markSchemes ~get mk
+            markUpdate = markUpdates ~get mk
+
+            // x, xx, y, yy getters
+            x =  fun i
+                channels ~x  i \xScale + leftSpace + (\xOffset i)
+            xx = fun i
+                channels ~xx i \xScale + leftSpace + (\xOffset i)
+            y =  fun i
+                channels ~y  i \yScale + topSpace + paneHeight - (\yOffset i)
+            yy = fun i
+                channels ~yy i \yScale + topSpace + paneHeight - (\yOffset i)
+
+            // insert mark element
+            insertMark = fun elm i
+                if (channels ~listen i !)
+                    elm attr 'pointer-events' 'none'
+                channels ~front i < 0 ?
+                | (gMarks insert elm [gMarks,firstChild])
+                | (gMarks insert elm)
+
+            // function to create basic __tp__ object
+            basic__tp__ =
+                if (markUpdate ~has 'fill' || (markUpdate ~has 'stroke'))
+                    colorTransform = fun val fillOrStroke
+                        dm = dataMaps;fillOrStroke ~get mk
+                        if (val isNumber ! && (dm ?: 'size'))
+                            val = dm ~get val
+                        info = schemes;fillOrStroke
+                        if (info !)
+                            val
+                        | (info,scheme isArray)
+                            info,scheme;val
+                        | else
+                            mn = info : 'min'
+                            mx = info : 'max'
+                            val - mn / (mx - mn) \info,scheme
+                fun elm i isSingleMarkType
+                    __tp__ = #
+                    | attach outerContainer i xTransform yTransform
+                    | colorTransform type markUpdate
+                    if (type != 'path')
+                        __tp__,xOffset = \xOffset i
+                        __tp__,yOffset = \yOffset i
+                        if (isSingleMarkType !)
+                            __tp__,x = \x i
+                            __tp__,y = \y i
+                    if (transitionMarkNames ~has type)
+                        __tp__,delay = channels ~delay i
+                        __tp__,duration = channels ~duration i
+                        __tp__,ease = channels ~ease i
+                    elm attach __tp__
+                    __tp__
+
+            // text element
+            textElm = fun i ti xi yi defaultCenter
+                elm = $text
+                | text ti
+                | attr 'text-anchor'
+                    defaultCenter ?
+                    | (_options,hAlign ?? 'middle')  // hack for closed line
+                    | (channels ~hAlign i)
+                | attr 'dominant-baseline' (channels ~vAlign i)
+                | \setUnlessNullish 'font-family' (channels ~fontFamily i) 
+                | \setUnlessNullish 'font-style'  (channels ~fontStyle  i) 
+                | \setUnlessNullish 'font-weight' (channels ~fontWeight i)
+                fontSize = channels ~fontSize i
+                if (fontSize isNullish !)
+                    elm attr 'font-size' (fontSize + 'px')
+                elm \setTextTransform xi yi (channels ~rotate i)
+
+            // add note element if used
+            addNote = fun markElm i xi yi defaultCenter
+                if channels,note
+                    ti = channels ~note i
+                    if (ti string)
+                        xi += channels ~noteXOffset i
+                        yi -= channels ~noteYOffset i
+                        colorChannel = channels ~noteColor as nc
+                            nc == '_fill' || (nc == '_stroke') ?
+                            | (nc ~slice 1)
+                            | 'noteColor'
+                        opacityChannel = channels ~noteOpacity as nOp
+                            nOp == '_fillOpacity' || (nOp == '_strokeOpacity') ?
+                            | (nOp ~slice 1)
+                            | 'noteOpacity'
+                        noteElm = \textElm i ti xi yi defaultCenter
+                        markElm ~after noteElm
+                        noteElm
+                        | attr 'stroke' 'none'
+                        | attr 'fill' (channels ~(colorChannel) i)
+                        | attr 'fill-opacity' (channels ~(opacityChannel) i)
+
+            // point, circle
+            if (type == 'point' || (type == 'circle'))
+                scope
+                    areaScale = markAreaInfo ~get mk : 'scale'
+                    presentInds each i
+                        xi = \x i
+                        yi = \y i
+                        ai = channels ~area i \areaScale
+                        if (type == 'point')
+                            si = channels ~shape i
+                            elm = \pointSymbol
+                                # shape si
+                                | area ai
+                                | x xi
+                                | y yi
+                        | else
+                            elm = $circle
+                            | attr 'cx' xi
+                            | attr 'cy' yi
+                            | attr 'r' (ai / Math,PI sqrt)
+                            | \setTransitionInitial channels i
+                        if markUpdate,size
+                            __tp__ = \basic__tp__ elm i
+                            __tp__,areaTransform = areaScale
+                            if (type == 'point')
+                                __tp__,area = ai
+                                __tp__,shape = si
+                                __tp__,shapeTransform = fun val
+                                    dm = dataMaps,shape ~get mk
+                                    if (val isNumber ! && (dm ?: 'size'))
+                                        val = dm ~get val
+                                    schemes,shape,scheme;val
+                            updatable ~push elm
+                        \insertMark elm i
+                        | \finishMark mk channels i
+                        \addNote elm i xi yi
+
+            // segment
+            | (type == 'segment')
+                presentInds each i
+                    xxi = \xx i
+                    yyi = \yy i
+                    elm = $line
+                    | attr 'x1' (\x i)
+                    | attr 'y1' (\y i)
+                    | attr 'x2' xxi
+                    | attr 'y2' yyi
+                    if markUpdate,size
+                        \basic__tp__ elm i
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+                    \addNote elm i xxi yyi
+
+            // rect
+            | (type == 'rect')
+                if mk,pixels
+                    w = channels,width
+                    h = channels,height
+                | else
+                    w = fun i
+                        channels ~width  i / xRange * paneWidth
+                    h = fun i 
+                        channels ~height i / yRange * paneHeight
+                presentInds each i
+                    xi = \x i
+                    yi = \y i
+                    wi = \w i + abs
+                    hi = \h i + abs
+                    if mk,corner
+                        xiMin = xReverse ? (xi - wi) xi
+                        yiMin = yReverse ? yi (yi - hi)
+                        cxi = xiMin + (wi / 2)
+                        cyi = yiMin + (hi / 2)
+                    | else  // centered
+                        xiMin = xi - (wi / 2)
+                        yiMin = yi - (hi / 2)
+                        cxi = xi
+                        cyi = yi
+                    if (mk,subplot isNullish !)  // subplot
+                        sp = tp ~option
+                            # width wi 
+                            | height hi
+                            | _outerContainer outerContainer
+                        mk,subplot ~'call' sp (channels ~subplot i) i
+                        \insertMark (sp ~plot) i
+                        | attr 'transform' (+ 'translate('xiMin' 'yiMin')')
+                        | \finishMark mk channels i 'subplot'
+                    | else  // standard rect
+                        elm = $rect
+                        | attr 'x' xiMin
+                        | attr 'y' yiMin
+                        | attr 'width' wi
+                        | attr 'height' hi
+                        | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                        | \setTransitionInitial channels i
+                        if markUpdate,size
+                            __tp__ = \basic__tp__ elm i
+                            __tp__,corner = mk,corner
+                            __tp__,width = wi       
+                            __tp__,height = hi
+                            __tp__ attach xReverse yReverse
+                            if mk,pixels
+                                __tp__,widthFunc  = fun v (v + abs)
+                                __tp__,heightFunc = fun v (v + abs)
+                            | else
+                                __tp__,widthFunc  = fun v (v / xRange * paneWidth  abs)
+                                __tp__,heightFunc = fun v (v / yRange * paneHeight abs)
+                            updatable ~push elm
+                        \insertMark elm i
+                        | \finishMark mk channels i
+                        \addNote elm i cxi cyi
+                    
+            // hLink, vLink
+            | ((type == 'hLink') || (type == 'vLink'))
+                presentInds each i
+                    xxi = \xx i
+                    yyi = \yy i
+                    d = d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
+                        # source (@ (\x i) (\y i))
+                        | target (@ xxi yyi)
+                    elm = $path
+                    | attr 'd' d
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,xx = xxi
+                        __tp__,yy = yyi
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+                    \addNote elm i xxi yyi
+
+            // edge
+            | (type == 'edge')
+                presentInds each i
+                    xi  = \x i
+                    yi  = \y i
+                    xxi = \xx i
+                    yyi = \yy i
+                    si  = \size i
+                    cwi = channels ~clockwise i boolean number
+                    elm = $path
+                    | attr 'd'
+                        # x xi y yi xx xxi yy yyi size si clockwise cwi \dEdge
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,xx = xxi
+                        __tp__,yy = yyi
+                        __tp__,size = si
+                        __tp__,clockwise = cwi
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+                    \addNote elm i xxi yyi
+
+            // text
+            | (type == 'text')
+                presentInds each i
+                    elm = \textElm i (channels ~'text' i) (\x i) (\y i)
+                    | \setTransitionInitial channels i
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,rotate = channels ~rotate i
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+
+            // arc
+            | (type == 'arc')
+                if channels,pie
+                    pieData = d3 ~pie
+                    | ~startAngle (channels ~startAngle)  // angle channels are constant
+                    | ~endAngle   (channels ~endAngle)
+                    | ~padAngle   (channels ~padAngle)
+                    | ~sortValues
+                        if (mk,pieSort isNullish) null 
+                        |  (mk,pieSort == 'desc') [b - a]
+                        |  (mk,pieSort == 'asc')  [a - b]
+                        |  (typeof mk,pieSort == 'function') mk,pieSort
+                        |  else
+                            'mark-arc, invalid pieSort option' \Error throw
+                    | call
+                        presentInds map i (channels ~pie i)
+                presentInds each i j
+                    xi = \x i
+                    yi = \y i
+                    arcObj = d3 ~arc
+                    | ~innerRadius  (channels ~innerRadius  i) 
+                    | ~outerRadius  (channels ~outerRadius  i) 
+                    | ~padRadius    (channels ~padRadius    i)
+                    | ~cornerRadius (channels ~cornerRadius i)
+                    if channels,pie
+                        arcObj
+                        | ~startAngle pieData;j,startAngle
+                        | ~endAngle   pieData;j,endAngle
+                        | ~padAngle   pieData;j,padAngle
+                    | else
+                        arcObj
+                        | ~startAngle (channels ~startAngle i) 
+                        | ~endAngle   (channels ~endAngle   i)
+                        | ~padAngle   (channels ~padAngle   i)
+                    elm = $path
+                    \insertMark elm i
+                    | attr 'd' (\arcObj)
+                    | attr 'transform' (+ 'translate('xi' 'yi')')
+                    | \finishMark mk channels i
+                    cxi cyi @= arcObj ~centroid
+                    \addNote elm i (xi + cxi) (yi + cyi)
+
+            // hBar, vBar
+            | (type == 'hBar' || (type == 'vBar'))
+                presentInds each i
+                    xi = \x i
+                    yi = \y i
+                    si = \size i
+                    if (type == 'hBar')
+                        xxi = \xx i
+                        nxi = xi >< xxi
+                        nyi = yi
+                        h = si / yRange * paneHeight
+                        bar = \hBarValues (# x xi xx xxi y yi h h)
+                    | else
+                        nxi = xi
+                        yyi = \yy i
+                        nyi = yi <> yyi
+                        w = si / xRange * paneWidth
+                        bar = \vBarValues (# x xi y yi yy yyi w w)
+                    elm = $rect
+                    | attr 'x' bar,xCorner
+                    | attr 'y' bar,yCorner
+                    | attr 'width' bar,width
+                    | attr 'height' bar,height
+                    | \setUnlessNullish 'rx' (channels ~cornerRadius i)
+                    | \setTransitionInitial channels i
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        __tp__,size = si
+                        if (type == 'hBar')
+                            __tp__,xx = xxi
+                            __tp__,heightFunc = [this,size / yRange * paneHeight]
+                        | else
+                            __tp__,yy = yyi
+                            __tp__,widthFunc = [this,size / xRange * paneWidth]
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+                    \addNote elm i nxi nyi
+
+            // path
+            | (type == 'path')
+                presentInds each i
+                    elm = $path
+                    | attr 'vector-effect' 'non-scaling-stroke'
+                    | \setUnlessNullish 'd' (channels ~path i)
+                    | attr 'transform'
+                        + 'translate('
+                        | (\xScale 0 + leftSpace)','(\yScale 0 + topSpace + paneHeight)
+                        | ') scale('
+                        | (paneWidth  / xRange * (xReverse ? (-1) 1))','
+                        | (paneHeight / yRange * (yReverse ? 1 (-1)))')'
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm i
+                        updatable ~push elm
+                    \insertMark elm i
+                    | \finishMark mk channels i
+
+            // line, hBand, vBand
+            | else
+                scope
+                    curveType = mk,curve ?? 'linear'
+                    if (curveTypes ~has curveType !)
+                        + 'mark-'type', invalid curve type: 'mk,curve \Error throw
+                    lineBandArgs = # missing mk,missing
+                    | attach nObs type curveType presentInds x xx y yy
+                    elm = $path
+                    if markUpdate,size
+                        __tp__ = \basic__tp__ elm null true
+                        __tp__ assign lineBandArgs 
+                        updatable ~push elm                    
+                    \insertMark elm
+                    | attr 'd' (lineBandArgs \dLineBand)
+                    | \finishMark mk channels null  // null required to pass full dataset to handlers
+                    if channels,note
+                        if (type == 'line' && (curveType ~slice (-6) == 'Closed'))
+                            cx cy @= presentInds map i (@ (\x i) (\y i))
+                            | \polygonCentroid
+                            \addNote elm null cx cy 'defaultCenter'
+                        | else
+                            maxInd = presentInds max
+                            fxi = \x maxInd
+                            fyi = \y maxInd
+                            if (type == 'line')
+                                \addNote elm null fxi fyi
+                            | (type == 'hBand')
+                                \addNote elm null fxi (fyi + (\yy maxInd) / 2)
+                            | else  // vBand
+                                \addNote elm null (fxi + (\xx maxInd) / 2) fyi
+
+
+        // ========== insert legend ==========
+
+        if legendWidth       
+            scope
+                if legendOut
+                    xPosn = legendPosition == 'out-left' ?
+                    | plotSpace,3
+                    | (width - plotSpace,1 - legendWidth)
+                    yPosn = plotSpace,0 + topSpace
+                | else    
+                    xPosn =
+                        if (legendPosition ~endsWith 'left')
+                            leftSpace + legendGap
+                        | (legendPosition ~endsWith 'right')
+                            leftSpace + paneWidth - legendGap - legendWidth
+                        | else  // center
+                            leftSpace + (paneWidth / 2) - (legendWidth / 2)
+                    yPosn =
+                        if (legendPosition ~startsWith 'top')
+                            topSpace + legendGap
+                        | (legendPosition ~startsWith 'bottom')
+                            topSpace + paneHeight - legendGap - legendHeight
+                        | else  // center
+                            topSpace + (paneHeight / 2) - (legendHeight / 2)
+                gLegend attr 'transform' (+ 'translate('xPosn' 'yPosn')')
+                legendOut ? container gPlot insert gLegend
+
+
+        // ========== insert and return container ==========
+
+        container \addToTarget target
+ 
+
+// ========== other instance methods ==========
+
+// option method
+tp :: 'option' = fun newOptions
+    if (newOptions isNullish)
+        this,_options = #
+    | else
+        this,_options assign newOptions
+    this
+
+// data method
+tp :: 'data' = fun d
+    if this,_dataset
+        'dataset already attached' \Error throw
+    this,_dataset = \getDataset d
+    this
+
+// state method
+tp :: 'state' = fun s
+    if (this,_state != null)
+        'initial state already set' \Error throw
+    this,_state = \cloneDeep s
+    this
+
+// each method
+tp :: 'each' = fun d f
+    if (d isArray !)
+        'array expected' \Error throw
+    d ~forEach f this
+    this
+
+// call method
+tp :: 'call' = fun f rest
+    f ~'apply' this rest
+    this
+
+// layer method
+tp :: 'layer' = fun rest
+    if (rest,length > 2)
+        data = tp ~'group' rest,0 rest,1
+        f = rest,2
+    | else
+        data f @= rest
+        if (data isArray !)
+            'array expected' \Error throw
+    data each row index
+        f ~'call' this (row : 'group') row,name index
+    this
+
+// mark methods
+markNames each name
+    tp :: name = fun rest
+        if (rest,length == 0)
+            'at least one argument expected' \Error throw
+        | (rest,length == 1)
+            options = rest,0
+        | else
+            x y options @= rest
+        mkObj = #
+        if (rest,length > 1)
+            mkObj attach x y
+        mkObj assign options
+        if (mkObj,data isNullish !)
+            mkObj,data = \getDataset mkObj,data
+        mkObj,type = name
+        this,_marks ~push mkObj
+        this
+
+
+// ========== static methods ==========
+
+// methods that can be used as instance or static
+array markNames 'option' 'data' 'state' 'each' 'call' 'layer' each name
+    tp;name = fun rest
+        po = new tp
+        po;name ~'apply' po rest
+        po
+
+// stack
+scope
+    stackData = fun data isHorizontal ops
+
+        // process arguments
+        groupByDim vbleDim @= isHorizontal ? (@ 'y' 'x') (@ 'x' 'y')
+        groupBy = ops;groupByDim \cropTilde
+        vble = ops;vbleDim \cropTilde
+        stack = ops,stack \cropTilde
+        offset <- 'none'
+        ord = ops : 'order' ?? 'none'
+        missing <- 'throw'
+        binLimits #= ops
+        isGroupBy = groupBy isNullish !
+        isBinning = binLimits isNullish !
+        isVble = vble isNullish !
+        returnRows = ops,rows
+        binProps = @ 'lower' 'upper' 'middle' 'range'
+        if (data \isArrayOfObjects !)
+            'array of objects/arrays expected' \Error throw
+        if (data,length == 0)
+            'empty data array' \Error throw
+        if (stack isNullish)
+            'stack option is required' \Error throw
+        if (data some [
+        | (isGroupBy && (a;groupBy \isInfOrNaN)) ||
+        | (isVble && (a;vble \isInfOrNaN)) ||
+        | (a;stack \isInfOrNaN)])
+            nonFiniteMsg \Error throw    
+        if (missing == 'skip')
+            data = data filter
+                fun d
+                    (isGroupBy && (d;groupBy isNullish) ||
+                    | (isVble && (d;vble isNullish)) ||
+                    | (d;stack isNullish)) !
+            if (data,length == 0)
+                allMissingMsg \Error throw
+        | else  // 'throw' or 'zero'
+            data each d
+                if (isGroupBy && (d;groupBy isNullish))
+                    + 'missing 'groupByDim' value' \Error throw
+                if (isVble && (d;vble isNullish) && (missing != 'zero'))
+                    + 'missing 'vbleDim' value' \Error throw
+                if (d;stack isNullish)
+                    + 'missing 'stack' value' \Error throw
+        
+        // get wide data for d3.stack
+        groupInfo = @
+        getWideRow = fun gArray gInfo
+            groupInfo ~push gInfo
+            obj = #
+            if isVble
+                gArray each row
+                    obj : row;stack = row;vble
+            | else  // count
+                gArray groupCount stack
+                    fun subCount subName
+                        obj : subName = subCount 
+            obj
+        wideData = 
+            if isGroupBy
+                if isBinning
+                    tp ~'bin' data groupBy binLimits map row
+                        \getWideRow (row : 'bin') row
+                | else
+                    data group groupBy getWideRow ~values array
+            | else
+                data \getWideRow @
+
+        // apply d3.stack
+        validOrder = @@ 'appearance' 'insideOut' 'none' 'reverse'
+        validOffset = @@ 'expand' 'diverging' 'none' 'silhouette' 'wiggle'
+        stackNames = new Set (data pick stack) array
+        levels = d3 ~stack
+        | ~keys stackNames
+        | ~value [a;b ?? 0]  // possible null/undef if missing is 'zero' or if missing rows of data
+        | ~'order'
+            if (ord == 'asc')  d3,stackOrderAscending
+            |  (ord == 'desc') d3,stackOrderDescending
+            |  (validOrder ~has ord) (d3 : (+ 'stackOrder'(\capitalize ord)))
+            |  else ('invalid stack order' \Error throw)
+        | ~offset
+            if (validOffset ~has offset) (d3 : (+ 'stackOffset'(\capitalize offset)))
+            |  else ('invalid stack offset' \Error throw)
+        | call wideData
+
+        // construct result from stacked data
+        vbleDimDim = vbleDim + vbleDim
+        if returnRows
+            result = @
+            levels each st i
+                st each grp j
+                    obj = 
+                        # (vbleDimDim) grp,0
+                        | (vbleDim) grp,1
+                        | fill stackNames;i
+                    if isGroupBy
+                        if isBinning
+                            binProps each p
+                                obj;p = groupInfo;j;p
+                        | else
+                            obj;groupByDim = groupInfo;j
+                    result ~push obj
+        | else
+            result = # (vbleDimDim) (@) (vbleDim) (@) fill (@)
+            if isGroupBy
+                if isBinning
+                    binProps each p
+                        result;p = @
+                | else
+                    result;groupByDim = @
+            levels each st i
+                st each grp j
+                    result;vbleDimDim ~push grp,0
+                    result;vbleDim    ~push grp,1
+                    result,fill       ~push stackNames;i
+                    if isGroupBy
+                        if isBinning
+                            binProps each p
+                                result;p ~push groupInfo;j;p
+                        | else
+                            result;groupByDim ~push groupInfo;j
+        result
+
+    tp,vStack = fun data ops
+        \stackData data false ops
+    tp,hStack = fun data ops
+        \stackData data true ops
+
+// lookup
+tp,lookup = fun data key mapFunc
+    mf = 
+        if (mapFunc isFunction)
+            mapFunc
+        | (mapFunc isNullish)
+            [a]
+        | else
+            mapFunc = mapFunc \cropTilde
+            [a : mapFunc]
+    obj = #
+    if (key isFunction)
+        data each d i
+            obj : (\key d i data) = \mf d i data
+    | else
+        key = key \cropTilde
+        data each d i
+            obj : d;key = \mf d i data
+    obj
+
+// group, groupCount
+@ 'group' 'groupCount' each method
+    tp;method = fun data rest
+        
+        if (data isArray !)
+            'array expected' \Error throw
+        nDim = rest,length
+        if (nDim == 0)
+            'at least one grouping property/function expected' \Error throw
+        
+        // group
+        result = @
+        groupNames = @
+        lastIndex = nDim - 1
+        props = @
+        do nDim i
+            p = \cropTilde rest;i
+            p isFunction ? (data ~'map' p) (data pick p) some isInfOrNaN ?
+                nonFiniteMsg \Error throw
+            props;i = p
+        groupFunc = fun d i
+            if (method == 'groupCount' && (i == lastIndex))
+                d groupCount props;i
+            | else
+                d group props;i
+            | each kv
+                groupNames;i = kv,0
+                if (i == lastIndex)
+                    result ~push (groupNames array <~push kv,1)
+                | else
+                    \groupFunc kv,1 (i + 1)
+        \groupFunc data 0
+        
+        // replace each row of result with an object
+        result each row j
+            newRow = #
+            nDim do i
+                newRow : (nDim > 1 ? (+ 'name_'i) 'name') = row;i
+            newRow : (method == 'groupCount' ? 'count' 'group') = row;nDim
+            result;j = newRow
+        result
+
+// facet
+tp,facet = fun rest
+    if (rest,length > 2)
+        data = tp ~'group' rest,0 rest,1
+        mapFunc = rest,2
+    | else
+        data mapFunc @= rest
+        if (data isArray !)
+            'array expected' \Error throw
+    container = $div
+    data each row index
+        plotObj = new tp
+        mapFunc ~'call' plotObj (row : 'group') row,name index
+        plotObj ~plot container
+    # plot [container \addToTarget a]
+
+// bin, binCount
+@ 'bin' 'binCount' each method
+
+    tp;method = fun data rest
+
+        if (data isArray !)
+            'array expected' \Error throw
+        nDim = rest,length / 2
+        if (nDim == 0 || (nDim isInteger !))
+            'unexpected number of arguments' \Error throw
+        
+        // check values and limits
+        accessors = @
+        limits = @
+        lowers = @
+        do nDim i
+            p = rest : (2 * i) \cropTilde
+            accessors;i = p isFunction ? p [a;p]
+            v = data map e (accessors ~(i) e)  // accessor not passed index and data
+            if (v some [a isFinite !])
+                'can only bin finite, numeric values' \Error throw
+            mn = v min
+            mx = v max
+            q = rest : (2 * i + 1)
+            if (q isFunction)
+                q = \q mn mx v
+            if (q isArray ! || (q,length < 2) || (q some [a isFinite !])
+            | (q min > mn) || (q max < mx))
+                'invalid bin limits' \Error throw
+            q = q order
+            lowers;i = q ~shift
+            limits;i = q     
+
+        // binning
+        result = @
+        binNames = @
+        binFunc = fun d i
+            cf = [accessors ~(i) a - b]
+            if (method == 'binCount' && (i == (nDim - 1)))
+                d binCount limits;i cf
+            | else
+                d bin limits;i cf
+            | each kv
+                if (kv,1 isArray && kv,1,length || (kv,1 isNumber && kv,1))
+                    binNames;i = kv,0
+                    if (i == (nDim - 1))
+                        result ~push (binNames array <~push kv,1)
+                    | else
+                        \binFunc kv,1 (i + 1)
+        \binFunc data 0
+
+        // replace each row of result with an object
+        binInfo = @
+        nDim do i
+            m = ##
+            suffix = nDim > 1 ? (+ '_'i) '' 
+            limits;i each lim j
+                lowerLim = j ? (limits;i : (j - 1)) lowers;i
+                m ~set lim
+                    # (+ 'lower'suffix)  lowerLim
+                    | (+ 'upper'suffix)  lim
+                    | (+ 'middle'suffix) (lowerLim + lim / 2)
+                    | (+ 'range'suffix)  (lim - lowerLim) 
+            binInfo;i = m
+        result each row j
+            newRow = #
+            nDim do i
+                newRow assign (binInfo;i ~get row;i)
+            newRow : (method == 'binCount' ? 'count' 'bin') = row;nDim
+            result;j = newRow
+        result
+    
+// range, linSpace
+tp,range = fun mn mx step
+    mn to mx step array
+tp : 'linSpace' = fun mn mx n
+    mn linSpace mx n array
+
+
+// ========== update ==========
+
+// update element
+updateElement = fun elm state
+
+    __tp__ #= elm
+    type #= __tp__
+
+    // channels
+    channels = ##
+    __tp__,markUpdate each chFunc
+        ch func @= chFunc
+        val = 
+            if (func,length < 2)  // single-mark type, non-xy channel
+                \func state  
+            | (singleMarkNames ~has type && (xyChannelNames ~has ch))
+                func
+            | else  // multi-mark type
+                \func elm,__tp__,i state
+        if (val isNullish !)
+            channels ~set ch val
+    channelsHasAnyOf = fun rest
+        rest some [channels ~has a]
+
+    // helpers
+    updateXY = fun rest
+        rest each ch
+            if (channels ~has ch)
+                __tp__;ch = channels ~get ch \(__tp__ : (+ ch,0'Transform'))
+    setFrom__tp__ = fun attrName ch
+        if (channels ~has ch)
+            elm ~setAttribute attrName __tp__;ch
+
+    // front
+    if (channels ~has 'front')
+        scope
+            front = channels ~get 'front' number
+            if (front < 0)
+                elm lower
+            | (front > 0)
+                elm raise
+
+    // listen
+    if (channels ~has 'listen')
+        channels ~get 'listen' ?
+        | (elm ~removeAttribute 'pointer-events')
+        | (elm ~setAttribute 'pointer-events' 'none')
+
+    // change transition before any channels that use transition
+    scope
+        newTransition = false
+        @ 'delay' 'duration' 'ease' each ch
+            if (channels ~has ch)
+                __tp__;ch = channels ~get ch
+                newTransition \= true
+        if newTransition
+            \setTransition elm __tp__,delay __tp__,duration __tp__,ease
+
+    // channels that map directly to an attribute
+    channels ~keys each ch
+        _attr = defChannels ~get ch : '_attr'
+        if _attr
+            elm ~setAttribute (_attr == true ? (ch \camelToKebab) _attr) (channels ~get ch)
+
+    // fill and stroke
+    if (channels ~has 'fill')
+        elm ~setAttribute 'fill' (channels ~get 'fill' \__tp__,colorTransform 'fill')
+    if (channels ~has 'stroke')
+        elm ~setAttribute 'stroke' (channels ~get 'stroke' \__tp__,colorTransform 'stroke')
+
+    // point
+    if (type == 'point')
+        if (\channelsHasAnyOf 'x' 'y' 'shape' 'area')
+            \updateXY 'x' 'y'
+            if (channels ~has 'shape')
+                __tp__,shape = channels ~get 'shape' \__tp__,shapeTransform
+            if (channels ~has 'area')
+                __tp__,area = channels ~get 'area' \__tp__,areaTransform
+            __tp__ at (@ 'x' 'y' 'shape' 'area') chg 'path' elm \pointSymbol
+
+    // circle
+    | (type == 'circle')
+        \updateXY 'x' 'y'
+        \setFrom__tp__ 'cx' 'x'
+        \setFrom__tp__ 'cy' 'y'
+        if (channels ~has 'area')
+            elm ~setAttribute 'r'
+                channels ~get 'area' \__tp__,areaTransform / Math,PI sqrt
+
+    // text
+    | (type == 'text')
+        if (\channelsHasAnyOf 'x' 'y' 'rotate')
+            \updateXY 'x' 'y'
+            if (channels ~has 'rotate')
+                __tp__,rotate = channels ~get 'rotate'
+            elm \setTextTransform __tp__,x __tp__,y __tp__,rotate
+        if (channels ~has 'fontSize')
+            elm ~setAttribute 'font-size' (channels ~get 'fontSize' + 'px')
+        if (channels ~has 'text')
+            elm text (channels ~get 'text')
+
+    // segment
+    | (type == 'segment')
+        \updateXY 'x' 'y'
+        \setFrom__tp__ 'x1' 'x'
+        \setFrom__tp__ 'y1' 'y'
+        if (channels ~has 'xx')
+            elm ~setAttribute 'x2' (channels ~get 'xx' \__tp__,xTransform)
+        if (channels ~has 'yy')
+            elm ~setAttribute 'y2' (channels ~get 'yy' \__tp__,yTransform)
+
+    // hLink and vLink
+    | (type == 'hLink' || (type == 'vLink'))
+        if (\channelsHasAnyOf 'x' 'xx' 'y' 'yy')
+            \updateXY 'x' 'y' 'xx' 'yy'    
+            elm ~setAttribute 'd'
+                d3 ~(type == 'hLink' ? 'linkHorizontal' 'linkVertical') call
+                    # source (@ __tp__,x  __tp__,y)
+                    | target (@ __tp__,xx __tp__,yy)
+
+    // edge
+    | (type == 'edge')
+        if (\channelsHasAnyOf 'x' 'xx' 'y' 'yy' 'size' 'clockwise')
+            \updateXY 'x' 'y' 'xx' 'yy'
+            if (channels ~has 'size')
+                __tp__,size = channels ~get 'size'
+            if (channels ~has 'clockwise')
+                __tp__,clockwise = channels ~get 'clockwise' boolean number
+            elm ~setAttribute 'd' (\dEdge __tp__)
+
+    // bars
+    | (type == 'hBar' || (type == 'vBar'))
+        other = type == 'hBar' ? 'xx' 'yy'
+        if (\channelsHasAnyOf 'x' 'y' other 'size')
+            \updateXY 'x' 'y' other
+            if (channels ~has 'size')
+                __tp__,size = channels ~get 'size'
+            x xx y yy #= __tp__
+            if (type == 'hBar')
+                h = __tp__ ~heightFunc
+                bar = \hBarValues (# attach x xx y h)
+            | else
+                w = __tp__ ~widthFunc
+                bar = \vBarValues (# attach x y yy w)
+            elm ~setAttribute 'x' bar,xCorner
+            elm ~setAttribute 'y' bar,yCorner
+            elm ~setAttribute 'width' bar,width
+            elm ~setAttribute 'height' bar,height
+        if (channels ~has 'cornerRadius')
+            elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
+
+    // rect
+    | (type == 'rect')
+        scope
+            if (channels ~has 'width')
+                __tp__,width = channels ~get 'width' \__tp__,widthFunc
+                \setFrom__tp__ 'width' 'width'
+            if (channels ~has 'height')
+                __tp__,height = channels ~get 'height' \__tp__,heightFunc 
+                \setFrom__tp__ 'height' 'height'
+            if (channels ~has 'x' || (channels ~has 'width'))
+                \updateXY 'x'
+                x #= __tp__
+                elm ~setAttribute 'x'
+                    __tp__,corner ?
+                    | (__tp__,xReverse ? (x - __tp__,width) x)
+                    | (x - (__tp__,width / 2))
+            if (channels ~has 'y' || (channels ~has 'height'))
+                \updateXY 'y'
+                y #= __tp__
+                elm ~setAttribute 'y'
+                    __tp__,corner ?
+                    | (__tp__,yReverse ? y (y - __tp__,height))
+                    | (y - (__tp__,height / 2))
+            if (channels ~has 'cornerRadius')
+                elm ~setAttribute 'rx' (channels ~get 'cornerRadius')
+
+    // path
+    | (type == 'path')
+        if (channels ~has 'path')
+            elm ~setAttribute 'd' (channels ~get 'path')
+
+    // line, hBand or vBand
+    | (singleMarkNames ~has type)
+        scope
+            chUsed = false
+            xyChannelNames each ch
+                if (channels ~has ch)
+                    chUsed \= true
+                    f = channels ~get ch
+                    __tp__;ch = fun i
+                        \f i state \(__tp__ : (+ ch,0'Transform'))
+            if chUsed
+                elm ~setAttribute 'd' (__tp__ \dLineBand)
+    
+    undefined
+
+// update plot(s)
+updatePlots = fun isMerge args
+
+    // get plot elements
+    plotElmts = @@
+    args,0 \iterableOfElelements each pe
+        oc = pe ?: '__tp__' ?: 'outerContainer'
+        if (oc == true)
+            plotElmts ~add pe
+        | (oc ?: '__tp__' ?: 'outerContainer' == true)
+            plotElmts ~add oc
+
+    // update state of plot elements
+    newState = args : (args,length - 1)
+    plotElmts each pe
+        isMerge ?
+        | (\merge pe,__tp__,state newState)
+        | (pe,__tp__,state = \cloneDeep newState)
+    
+    // only plot elements passed: update all updatable elements inside each plot
+    if (args,length == 2) 
+        plotElmts each pe
+            pe,__tp__,updatable each elm
+                \updateElement elm pe,__tp__,state
+
+    // only update elements that are updatable and in one of the plot elements    
+    | else  
+        elmts = @@
+        args,1 \iterableOfElelements each elm
+            if (elm ?: '__tp__' ?: 'markUpdate' ?: 'size')
+                elmts ~add elm
+        elmts each elm
+            oc = elm ?: '__tp__' ?: 'outerContainer'
+            if (plotElmts ~has oc)
+                \updateElement elm oc,__tp__,state
+    undefined
+
+// update method
+tp,update = fun rest
+    if (rest,length != 2 && (rest,length != 3))
+        '2 or 3 arguments expected' \Error throw
+    \updatePlots false rest
+
+// mergeUpdate method
+tp,mergeUpdate = fun rest
+    if (rest,length != 2 && (rest,length != 3))
+        '2 or 3 arguments expected' \Error throw
+    \updatePlots true rest
+
+
+// ========== color schemes ==========
+
+// d3.schemeCategory10: https://github.com/d3/d3-scale-chromatic
+tp,cat = 
+    @ '#1f77b4' '#ff7f0e' '#2ca02c' '#d62728' '#9467bd'
+    | '#8c564b' '#e377c2' '#7f7f7f' '#bcbd22' '#17becf'

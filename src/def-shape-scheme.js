@@ -1,0 +1,17 @@
+////////////////////////////////////////////////////////////////////////////////
+// Default shape scheme.
+////////////////////////////////////////////////////////////////////////////////
+
+export const defShapeScheme = [
+  'circle',
+  'square',
+  'triangle-up',
+  'plus',
+  'diamond',
+  'star',
+  'wye',
+  'triangle-down',
+  'triangle-right',
+  'triangle-left',
+  'times'
+];
