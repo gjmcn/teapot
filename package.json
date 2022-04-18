@@ -1,17 +1,16 @@
 {
   "name": "@gjmcn/teapot",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "A JavaScript library for creating SVG plots.",
-  "module": "src/index.js",
-  "main": "dist/teapot.min.js",
-  "exports": {
-    "import": "./dist/teapot.min.js",
-    "default": "./dist/teapot.min.js"
-  },
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npx zap --all --map src",
-    "build": "npx zap --all --map src && rollup --config"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "build": "esbuild src/index.js --format=esm --bundle --minify --sourcemap --outfile=dist/index.js"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/__tests__/test-helpers.js"
+    ]
   },
   "repository": {
     "type": "git",
@@ -23,14 +22,12 @@
     "url": "https://github.com/gjmcn/teapot/issues"
   },
   "homepage": "https://github.com/gjmcn/teapot#readme",
-  "devDependencies": {
-    "@gjmcn/zap": "^0.4.3",
-    "@rollup/plugin-node-resolve": "^11.2.0",
-    "rollup": "^2.42.1",
-    "rollup-plugin-terser": "^7.0.2"
-  },
   "dependencies": {
     "d3-shape": "^2.1.0",
     "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "esbuild": "^0.14.36",
+    "jest": "^27.5.1"
   }
 }
