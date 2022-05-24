@@ -136,7 +136,7 @@ export const defChannels = new Map([
     vBar: null
   }],
   [ 'startAngle',   { _kind: 'special',  arc: 0 }],
-  [ 'endAngle',     { _kind: 'special',  arc: (2 * Math,PI) }],
+  [ 'endAngle',     { _kind: 'special',  arc: (2 * Math.PI) }],
   [ 'outerRadius',  { _kind: 'special',  arc: 80 }],
   [ 'innerRadius',  { _kind: 'special',  arc: 0 }],
   [ 'padAngle',     { _kind: 'special',  arc: 0 }],

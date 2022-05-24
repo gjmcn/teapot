@@ -2,6 +2,7 @@
   "name": "@gjmcn/teapot",
   "version": "0.4.0",
   "description": "A JavaScript library for creating SVG plots.",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
@@ -10,7 +11,8 @@
   "jest": {
     "testPathIgnorePatterns": [
       "<rootDir>/__tests__/test-helpers.js"
-    ]
+    ],
+    "transform": {}
   },
   "repository": {
     "type": "git",
