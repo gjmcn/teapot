@@ -2,6 +2,7 @@
 // Helper functions and constants.
 ////////////////////////////////////////////////////////////////////////////////
 
+
 import { defShapeScheme } from './def-shape-scheme.js';
 import { defChannels } from './def-channels.js';
 import { defOptions } from './def-options.js';
@@ -30,6 +31,14 @@ export const h = {
       if (!f(v, j++, iterable)) return false;
     }
     return true;
+  },
+
+  pick(iterable, p) {
+    const r = [];
+    for (let v of iterable) {
+      r.push(v[p]);
+    }
+    return r;
   },
 
   // iterable of elements
@@ -495,5 +504,36 @@ export const h = {
     }
     return content;
   },
+
+  // set font
+  setFont(elm, prefix, op) {
+    elm.setAttribute('font-family',  op(`${prefix}FontFamily`) ?? op('fontFamily'));
+    elm.setAttribute('font-size',    op(`${prefix}FontSize`)   ?? op('fontSize') + 'px');
+    elm.setAttribute('font-style',   op(`${prefix}FontStyle`)  ?? op('fontStyle'));
+    elm.setAttribute('font-weight',  op(`${prefix}FontWeight`) ?? op('fontWeight'));
+    elm.setAttribute('fill',         op(`${prefix}Color`)      ?? op('color'));
+    elm.setAttribute('fill-opacity', op(`${prefix}Opacity`)    ?? op('opacity'));
+    elm.setAttribute('stroke-width', 0);
+  },
+  
+  // get canvas context
+  getCanvasContext(prefix, op) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const r = window.devicePixelRatio;
+    canvas.style.width = '300px';
+    canvas.style.height = '300px';
+    canvas.width = 300 * r;
+    canvas.height = 300 * r;
+    ctx.scale(r, r);
+    ctx.font =  
+      (op(`${prefix}FontStyle`)  ?? op('fontStyle'))  + ' ' +
+      (op(`${prefix}FontWeight`) ?? op('fontWeight')) + ' ' +
+      (op(`${prefix}FontSize`)   ?? op('fontSize'))   + 'px ' +
+      (op(`${prefix}FontFamily`) ?? op('fontFamily'));
+    return ctx;
+  },
+
+ 
 
 }

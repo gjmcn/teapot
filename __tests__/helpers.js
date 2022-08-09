@@ -46,6 +46,15 @@ test('every, 6', () => {
   expect(h.every([], v => v)).toBe(true)
 });
 
+test('pick, 1', () => { 
+  expect(h.pick([{a: 5, b: 6}, {a:7, b: 8}], 'a'))
+    .toStrictEqual([5, 7])
+});
+test('pick, 2', () => { 
+  expect(h.pick(new Set([[5, 6], [7, 8]]), 1))
+    .toStrictEqual([6, 8])
+});
+
 test('markChannelError, 1', () => { 
   expect(() => h.markChannelError('point', 'fill', 'some message'))
     .toThrow('mark-point, channel-fill, some message')
